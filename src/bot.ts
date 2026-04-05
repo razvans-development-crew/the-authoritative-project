@@ -15,7 +15,7 @@ const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
 const { 
   Client, Collection, Events, 
   GatewayIntentBits, MessageFlags, 
-  Partials, Routes, REST 
+  Partials, Routes, REST, ActivityType
 } = require('discord.js');
 
 export const client = new Client({
@@ -33,6 +33,33 @@ export const client = new Client({
     GatewayIntentBits.DirectMessageTyping,
     GatewayIntentBits.MessageContent,
   ],
+  partials: [
+    Partials.Channel,
+		Partials.GuildMember,
+		Partials.GuildScheduledEvent,
+		Partials.Message,
+		Partials.Reaction,
+		Partials.ThreadMember,
+		Partials.User
+  ],
+  logger: {
+    instance: logger
+  },
+  ws: {
+    properties: {
+      $browser: "Discord iOS"
+    }
+  },
+  presence: {
+    status: "dnd",
+    activities: [
+      {
+        name: "https://112x4.scriptlang.com/",
+        state: "https://112x4.scriptlang.com/",
+        type: ActivityType.Watching
+      }
+    ]
+  }
 });
 
 {

@@ -8,5 +8,10 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "discord.js": "^14.26.2",
+    "elysia": "^1.4.28",
+    "prisma": "^7.6.0"
   }
 }

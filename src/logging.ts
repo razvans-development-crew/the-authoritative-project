@@ -1,13 +1,13 @@
-import winston from 'winston';
+import { PinoLogger } from "@stegripe/pino-logger"
 
-export const logger = winston.createLogger({
-  level: 'debug',
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple(),
-      ),
-    }),
-  ],
-})
+export const logger = new PinoLogger({
+  formatters: {
+    bindings: () => ({ pid: null })
+  },
+  transport: {
+    target: "pino-pretty",
+    options: {
+      colorize: true
+    }
+  }
+});

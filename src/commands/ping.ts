@@ -1,1 +1,0 @@
-import { SlashCommandBuilder, CommandInteraction, Client} from "discord.js";

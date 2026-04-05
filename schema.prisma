@@ -8,6 +8,14 @@ generator client {
   recursive_type_depth = 5
 }
 
+// privilege levels:
+// 0 = no privileges, no whitelist
+// 1 = no privileges, whitelist
+// 2 = remote admin usage, whitelist
+// 3 = remote admin usage + user bans, whitelist
+// 4 = remote admin usage + user bans + group bans, whitelist
+// 5 = all permissions from below + admin, whitelist
+// 6 = owner
 model TAPWhitelist {
   id                     String @id @map("_id") @default(uuid())
   whitelisted_at         DateTime @default(now())

@@ -10,7 +10,7 @@ load_routes(app, join(import.meta.dir, "routes"));
 
 export async function run_backend_server(): Promise<void> {
   app.use(logger({
-    level: "info",
+    level: "debug",
     formatters: {
       bindings: () => ({ pid: null })
     },

@@ -20,9 +20,9 @@ const client = new Client({
   ],
 });
 
-client.on("ready", async () => {
-  logger.info("BOT", "Discord bot is ready");
-});
+client.once(Events.ClientReady, (readyClient) => {
+  logger.info(`Logged in as ${readyClient.user?.tag}!`);
+})
 
 export async function run_bot(): Promise<void> {
   client.login(await get_env_variable("TOKEN"));

@@ -88,7 +88,8 @@ export async function get_legacy_global_user_bans() {
       moderator_dc_id: legacy_global_user_ban.moderator,
       rx_user_id: Number(legacy_global_user_ban.rx_user_id),
       rx_user_name: legacy_global_user_ban.rx_user_name,
-      reason: legacy_global_user_ban.reason
+      reason: legacy_global_user_ban.reason,
+      banned_at: legacy_global_user_ban.banned_at,
     }
   }
 
@@ -104,7 +105,8 @@ export async function get_legacy_global_group_bans() {
       moderator_dc_id: legacy_global_group_ban.moderator,
       group_id: Number(legacy_global_group_ban.group_id),
       group_name: legacy_global_group_ban.group_name,
-      reason: legacy_global_group_ban.reason
+      reason: legacy_global_group_ban.reason,
+      banned_at: legacy_global_group_ban.banned_at
     }
   }
 

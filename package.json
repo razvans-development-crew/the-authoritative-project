@@ -3,15 +3,22 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "bun run index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@prisma/client": "6.19",
+    "@types/node": "^25.5.2",
     "discord.js": "^14.26.2",
+    "dotenv": "^17.4.0",
     "elysia": "^1.4.28",
-    "prisma": "^7.6.0"
+    "prisma": "6.19",
+    "winston": "^3.19.0"
   }
 }

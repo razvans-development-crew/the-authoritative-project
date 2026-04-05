@@ -1,9 +1,20 @@
-import { Elysia } from 'elysia'
+import { run_backend_server } from "./backend_server.ts";
+import { logger } from "./logging.ts";
+import { run_bot } from "./bot.ts";
+const database = require("./database.ts");
 
-const app = new Elysia()
+async function main() {
+  await run_backend_server().catch((err) => {
+    database.disconnect();
+    logger.error(err, "Error running backend server");
+  }).then(() => {
+    database.connect();
+    logger.info("Backend server has started");
+  });
 
-app.get("/", () => {
-  return "hi"
-})
+  await run_bot().catch((err) => {
+    logger.error(err, "Error running bot");
+  });
+}
 
-app.listen(8080)
+await main();

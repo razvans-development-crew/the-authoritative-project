@@ -11,8 +11,6 @@ const {
   Partials, Routes, REST 
 } = require('discord.js');
 
-const { token } = require('./config.json');
-
 const database = require("./database.ts");
 export const client = new Client({
   intents: [

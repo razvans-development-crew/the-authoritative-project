@@ -1,0 +1,38 @@
+datasource db {
+  provider = "mongodb"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  recursive_type_depth = 5
+}
+
+model Whitelist {
+  id                     String @id @map("_id") @default(uuid())
+  whitelisted_at         DateTime @default(now())
+  discord_user_id        String @unique
+  rx_user_name           String
+  rx_user_id             String
+  rank                   String @default("user")
+  privilege_level        Int @default(1)
+}
+
+model GlobalUserBan {
+  id                     String @id @map("_id") @default(uuid())
+  banned_at              DateTime @default(now())
+  moderator_dc_id        String
+  rx_user_name           String
+  rx_user_id             String @unique
+  reason                 String
+  duration               Int @default(-1) // -1 = permanent
+}
+
+model GlobalGroupBan {
+  id                     String @id @map("_id") @default(uuid())
+  banned_at              DateTime @default(now())
+  moderator_dc_id        String
+  rx_group_name          String
+  rx_group_id            String @unique
+  reason                 String
+  duration               Int @default(-1) // -1 = permanent
+}

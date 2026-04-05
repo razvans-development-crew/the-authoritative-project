@@ -14,7 +14,7 @@ const {
 const { token } = require('./config.json');
 
 const database = require("./database.ts");
-const client = new Client({
+export const client = new Client({
   intents: [
     GatewayIntentBits.AutoModerationConfiguration,
     GatewayIntentBits.GuildMembers,

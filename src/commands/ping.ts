@@ -1,10 +1,9 @@
 import { SlashCommandBuilder, CommandInteraction, Client} from "discord.js";
-import { client } from "../../bot.ts";
+import { client } from "../bot.ts";
+import { type Command } from "../types/Command.ts";
 
-module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('ping')
-    .setDescription('Pong! Returns the latency of the bot.'),
+const command: Command = {
+  data: new SlashCommandBuilder().setName('ping').setDescription('Pong! Returns the latency of the bot.'),
   async execute(interaction: CommandInteraction) {
     const sent = await interaction.reply({ content: '> Pinging...', fetchReply: true });
 
@@ -19,3 +18,5 @@ module.exports = {
     });
   },
 }
+
+export default command;

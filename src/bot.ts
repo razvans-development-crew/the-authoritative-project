@@ -1,9 +1,16 @@
 import { logger } from "./logging.ts";
 import { get_env_variable } from "./env_variables.ts";
 import type { BaseInteraction, CommandInteraction, Interaction, InteractionResponse } from "discord.js";
+import { load_commands } from "./command_loader.ts";
+import { register_commands } from "./register_commands.ts";
 
 const fs = require('node:fs');
 const path = require('node:path');
+const commands_path = path.join(import.meta.dir, "commands");
+const commands = await load_commands(commands_path);
+const database = require("./database.ts");
+const TOKEN = await get_env_variable("TOKEN")!;
+const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
 
 const { 
   Client, Collection, Events, 
@@ -11,7 +18,6 @@ const {
   Partials, Routes, REST 
 } = require('discord.js');
 
-const database = require("./database.ts");
 export const client = new Client({
   intents: [
     GatewayIntentBits.AutoModerationConfiguration,
@@ -29,55 +35,30 @@ export const client = new Client({
   ],
 });
 
-client.once(Events.ClientReady, (readyClient: typeof Client) => {
-  logger.info(`Logged in as ${readyClient.user?.tag}!`);
-})
-
-client.commands = new Collection();
-
-const foldersPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
-
-for (const folder of commandFolders) {
-	const commandsPath = path.join(foldersPath, folder);
-	const commandFiles = fs.readdirSync(commandsPath).filter((file: string) => file.endsWith('.js'));
-	for (const file of commandFiles) {
-		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
-		// Set a new item in the Collection with the key as the command name and the value as the exported module
-		if ('data' in command && 'execute' in command) {
-			client.commands.set(command.data.name, command);
-		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-		}
-	}
+{
+  (client as any).commands = commands;
+  await register_commands(commands, TOKEN, CLIENT_ID);
 }
+
+client.once(Events.ClientReady, async (readyClient: typeof Client) => {
+  logger.info(`Logged in as ${readyClient.user?.tag}`);
+})
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 	if (!interaction.isChatInputCommand()) return;
-	const command = (interaction.client as any).commands.get(interaction.commandName);
 
-	if (!command) {
-		console.error(`No command matching ${interaction.commandName} was found.`);
-		return;
-	}
+    const command = commands.get(interaction.commandName);
+    if (!command) return;
 
-	try {
-		await command.execute(interaction);
-	} catch (error) {
-		console.error(error);
-		if (interaction.replied || interaction.deferred) {
-			await interaction.followUp({
-				content: '> There was an error while executing this command',
-				flags: MessageFlags.Ephemeral,
-			});
-		} else {
-			await interaction.reply({
-				content: '> There was an error while executing this command',
-				flags: MessageFlags.Ephemeral,
-			});
-		}
-	}
+    try {
+      await command.execute(interaction);
+    } catch (err) {
+      logger.error(err);
+      await interaction.reply({
+        content: "> An error has occurred while executing the command.",
+        ephemeral: true
+      });
+    }
 });
 
 export async function run_bot(): Promise<void> {

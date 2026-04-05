@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@prisma/client": "6.19",
+    "@sapphire/framework": "^5.5.0",
     "@stegripe/pino-logger": "^1.2.0",
     "@types/node": "^25.5.2",
     "discord.js": "^14.26.2",

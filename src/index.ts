@@ -1,20 +1,22 @@
 import { run_backend_server } from "./app.ts";
 import { logger } from "./logging.ts";
 import { run_bot } from "./bot.ts";
+import { LogLevel } from "@sapphire/framework";
+
 const database = require("./database.ts");
 
 async function main() {
   await run_backend_server().catch((err) => {
     database.disconnect();
-    logger.write({level: "error", timestamp: new Date().toISOString(), message: "Error running backend server", error: err});
+    logger.write(LogLevel.Error, `Error running backend server ${err}`);
   }).then(() => {
     database.connect();
-    logger.write({level: "info", timestamp: new Date().toISOString(), message: "Backend server has started"});
+    logger.write(LogLevel.Info, "Backend server has started");
   });
 
   await run_bot().catch((err) => {
     database.disconnect();
-    logger.write({level: "error", timestamp: new Date().toISOString(), message: "Error running bot", error: err});
+    logger.write(LogLevel.Error, `Error running bot ${err}`);
   });
 }
 

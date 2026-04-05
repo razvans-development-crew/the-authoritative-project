@@ -3,6 +3,7 @@ import { get_env_variable } from "./env_variables.ts";
 import type { BaseInteraction, CommandInteraction, Interaction, InteractionResponse } from "discord.js";
 import { load_commands } from "./command_loader.ts";
 import { register_commands } from "./register_commands.ts";
+import { LogLevel } from "@sapphire/framework";
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -68,7 +69,7 @@ export const client = new Client({
 }
 
 client.once(Events.ClientReady, async (readyClient: typeof Client) => {
-  logger.write({level: "info", timestamp: new Date().toISOString(), message: `Logged in as ${readyClient.user?.tag}`});
+  logger.write(LogLevel.Info, `Logged in as ${readyClient.user?.tag}`);
 })
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
@@ -80,7 +81,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
     try {
       await command.execute(interaction);
     } catch (err) {
-      logger.write({level: "error", timestamp: new Date().toISOString(), message: `Error executing command ${interaction.commandName}`, error: err});
+      logger.write(LogLevel.Error, `Error executing command ${interaction.commandName}`);
       await interaction.reply({
         content: "> An error has occurred while executing the command.",
         ephemeral: true

@@ -14,3 +14,5 @@ const command: Command = {
     await interaction.reply({ content: '> hi' });
   },
 }
+
+export default command;

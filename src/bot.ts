@@ -80,6 +80,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 
     try {
       await command.execute(interaction);
+      logger.write(LogLevel.Info, `(${interaction.commandName}) ${interaction.user.globalName} (<@${interaction.user.id}>)`);
     } catch (err) {
       logger.write(LogLevel.Error, `Error executing command ${interaction.commandName}`);
       await interaction.reply({

@@ -17,12 +17,12 @@ export async function register_commands(
       Routes.applicationGuildCommands(clientId, guildId),
       { body }
     );
-    logger.info("Registered guild commands.");
+    logger.write({level: "info", timestamp: new Date().toISOString(), message: "Registered guild commands."});
   } else {
     await rest.put(
       Routes.applicationCommands(clientId),
       { body }
     );
-    logger.info("Registered global commands.");
+    logger.write({level: "info", timestamp: new Date().toISOString(), message: "Registered global commands."});
   }
 }

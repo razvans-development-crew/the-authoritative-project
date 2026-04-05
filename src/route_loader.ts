@@ -15,7 +15,7 @@ export function load_routes(app: Elysia, routes_dir: string) {
       } else if (file_stat.isFile() && file.endsWith(".ts")) {
         const route_module = require(full_path);
         if (typeof route_module.register_route === "function") {
-          logger.info(`Registering route ${full_path}`);
+          logger.write({level: "info", timestamp: new Date().toISOString(), message: `Registering route ${full_path}`});
           route_module.register_route(app);
         }
       }

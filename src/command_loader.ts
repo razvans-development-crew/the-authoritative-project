@@ -16,7 +16,7 @@ export async function load_commands(dir: string): Promise<Map<string, Command>> 
       if (entry.isDirectory()) {
         await walk(fullPath, entry.name);
       } else if (entry.name.endsWith(".ts")) {
-        logger.info(`Loading command ${entry.name}`);
+        logger.write({level: "info", timestamp: new Date().toISOString(), message: `Loading command ${entry.name}`});
 
         const fileUrl = pathToFileURL(fullPath).href;
         const mod = await import(fileUrl);
@@ -24,7 +24,7 @@ export async function load_commands(dir: string): Promise<Map<string, Command>> 
         const command: Command = mod.default;
 
         if (!command?.data || !command?.execute) {
-          logger.warn(`Skipping ${fullPath} because it doesn't export a command`);
+          logger.write({level: "warn", timestamp: new Date().toISOString(), message: `Command ${entry.name} is not a valid command`});
           continue;
         }
 

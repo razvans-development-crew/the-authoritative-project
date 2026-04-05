@@ -68,7 +68,7 @@ export const client = new Client({
 }
 
 client.once(Events.ClientReady, async (readyClient: typeof Client) => {
-  logger.info(`Logged in as ${readyClient.user?.tag}`);
+  logger.write({level: "info", timestamp: new Date().toISOString(), message: `Logged in as ${readyClient.user?.tag}`});
 })
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
@@ -80,7 +80,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
     try {
       await command.execute(interaction);
     } catch (err) {
-      logger.error(err);
+      logger.write({level: "error", timestamp: new Date().toISOString(), message: `Error executing command ${interaction.commandName}`, error: err});
       await interaction.reply({
         content: "> An error has occurred while executing the command.",
         ephemeral: true

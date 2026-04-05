@@ -16,6 +16,8 @@ export async function load_commands(dir: string): Promise<Map<string, Command>> 
       if (entry.isDirectory()) {
         await walk(fullPath, entry.name);
       } else if (entry.name.endsWith(".ts")) {
+        logger.info(`Loading command ${entry.name}`);
+
         const fileUrl = pathToFileURL(fullPath).href;
         const mod = await import(fileUrl);
 

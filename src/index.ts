@@ -1,4 +1,4 @@
-import { run_backend_server } from "./backend_server.ts";
+import { run_backend_server } from "./app.ts";
 import { logger } from "./logging.ts";
 import { run_bot } from "./bot.ts";
 const database = require("./database.ts");

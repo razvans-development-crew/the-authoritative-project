@@ -1,0 +1,6 @@
+import { Elysia } from "elysia";
+const database = require("../../database.ts");
+
+export function register_route(app: Elysia) {
+  app.get("/api/v3/bans", database.get_global_user_bans());
+}

@@ -1,4 +1,3 @@
-import fs from "fs";
 import { pathToFileURL } from "url";
 import { readdir } from "fs/promises";
 import path from "path";

@@ -9,6 +9,17 @@ const app = new Elysia();
 load_routes(app, join(import.meta.dir, "routes"));
 
 export async function run_backend_server(): Promise<void> {
-  app.use(logger({level: "debug", transport: {target: "pino-pretty", options: {colorize: true}}}));
+  app.use(logger({
+    level: "debug",
+    formatters: {
+      bindings: () => ({ pid: null })
+    },
+    transport: { 
+      target: "pino-pretty", 
+      options: { 
+        colorize: true 
+      } 
+    }
+  }));
   app.listen(await env_variables.get_env_variable("PORT"));
 }

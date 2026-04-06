@@ -14,7 +14,7 @@ const command: Command = {
         .setRequired(true)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    if (!await preconditions.is_dc_user_id_owner(interaction.user.id)) {
+    if (await preconditions.is_dc_user_id_owner(interaction.user.id) === false) {
       await interaction.reply({ content: '> You are not the owner of this bot.' });
       return;
     }

@@ -125,7 +125,9 @@ const command: Command = {
           + "\n**Moderator**: "
           + user_ban_info.moderator_dc_id
           + "\n**Reason**: "
-          + user_ban_info.reason,
+          + user_ban_info.reason
+          + "\n**Until**: "
+          + user_ban_info.duration,
         inline: false
       })
     }

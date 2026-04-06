@@ -85,7 +85,9 @@ const command: Command = {
           + "\n**Moderator**: "
           + group_ban_info.moderator_dc_id
           + "\n**Reason**: "
-          + group_ban_info.reason,
+          + group_ban_info.reason
+          + "\n**Until**: "
+          + group_ban_info.duration,
         inline: false
       })
     }

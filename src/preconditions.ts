@@ -1,8 +1,8 @@
 const env_variables = require("./env_variables.ts");
 const database = require("./database.ts");
 
-export async function is_dc_user_id_owner(to_check: Number): Promise<boolean> {
-  return (await Number(env_variables.get_env_variable("OWNER")) === to_check)
+export async function is_dc_user_id_owner(to_check: string): Promise<boolean> {
+  return (await Number(env_variables.get_env_variable("OWNER")) === Number(to_check))
 }
 
 export async function is_dc_user_id_admin(to_check: string): Promise<boolean> {
@@ -21,6 +21,6 @@ export async function is_rx_user_id_admin(to_check: string): Promise<boolean> {
       rx_user_id: Number(to_check)
     }
   });
-  
+
   return whitelist.privilege_level === 5
 }

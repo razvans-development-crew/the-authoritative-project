@@ -3,6 +3,7 @@ import type { Command } from "./types/Command";
 import { logger } from "./logging";
 import { LogLevel } from "@sapphire/framework";
 import { SlashCommandBuilder } from "discord.js";
+import { ApplicationCommandOptionType } from "discord.js";
 
 export async function register_commands(
   commands: Map<string, Command>,
@@ -36,9 +37,75 @@ export async function register_commands(
       .setDescription(`commands for ${groupName}`);
 
     for (const cmd of groupCommands) {
-      parentCommand.addSubcommand(sub =>
-        sub.setName(cmd.data.name).setDescription(cmd.data.description || "No description")
-      );
+      parentCommand.addSubcommand(sub => {
+        sub.setName(cmd.data.name).setDescription(cmd.data.description || "no description");
+
+        for (const option of cmd.data.toJSON().options ?? []) {
+          switch (option.type) {
+            case ApplicationCommandOptionType.String:
+              sub.addStringOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.Integer:
+              sub.addIntegerOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.Boolean:
+              sub.addBooleanOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.User:
+              sub.addUserOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.Channel:
+              sub.addChannelOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.Role:
+              sub.addRoleOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.Mentionable:
+              sub.addMentionableOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            case ApplicationCommandOptionType.Number:
+              sub.addNumberOption(o => o
+                .setName(option.name)
+                .setDescription(option.description || "No description")
+                .setRequired(option.required ?? false)
+              );
+              break;
+            default:
+              logger.write(LogLevel.Warn, `Unknown option type ${option.type}`);
+              break;
+          }
+        }
+
+        return sub;
+      });
     }
 
     body.push(parentCommand.toJSON());

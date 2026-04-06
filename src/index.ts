@@ -13,7 +13,7 @@ async function main() {
     database.connect();
     logger.write(LogLevel.Info, "Backend server has started");
   }).finally(() => {
-    logger.write(LogLevel.Warn, "Backend server has stopped");
+    logger.write(LogLevel.Warn, "Backend server has stopped")
   });
 
   await run_bot().catch((err) => {

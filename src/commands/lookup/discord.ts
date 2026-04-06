@@ -27,6 +27,11 @@ const command: Command = {
 
     const user = interaction.options.getUser('user') ?? interaction.user;
 
+    if (!user) {
+      await interaction.followUp({ content: "> You must specify a valid user." });
+      return;
+    }
+
     let user_database_info;
 
     if (interaction.options.getBoolean('legacy-lookup') === true) {

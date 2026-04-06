@@ -31,6 +31,11 @@ const command: Command = {
     const user_id = await rozod_client.get_user_id_from_name(username);
     const user_info = await rozod_client.get_user_info_from_id(user_id);
 
+    if (user_info == "No user found") {
+      await interaction.followUp({ content: "> The specified user does not exist." });
+      return;
+    }
+
     let user_database_info;
     let user_ban_info;
 

@@ -29,6 +29,11 @@ const command: Command = {
     const group_id = interaction.options.getString('group-id');
     const group_info = await rozod_client.get_group_info_from_id(String(group_id));
 
+    if (group_info == "No group found") {
+      await interaction.followUp({ content: "> The specified group does not exist." });
+      return;
+    }
+
     let group_ban_info;
 
     if (interaction.options.getBoolean('legacy-lookup') === true) {

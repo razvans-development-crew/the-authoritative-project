@@ -95,7 +95,23 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
   if (!command) return;
 
   try {
-    await command.execute(interaction);
+    try {
+      await command.execute(interaction);
+    } catch (err) {
+      logger.write(LogLevel.Warn, `Exception while executing command ${command_name}: ${err}`);
+
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: "> An error has occurred while executing the command.",
+          flags: MessageFlags.Ephemeral
+        });
+      } else {
+        await interaction.reply({
+          content: "> An error has occurred while executing the command.",
+          flags: MessageFlags.Ephemeral
+        });
+      }
+    }
     logger.write(
       LogLevel.Info,
       `(${command_name}${command.group ? ` ${command_name}` : ""}) ${interaction.user.globalName} (<@${interaction.user.id}>)`

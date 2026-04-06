@@ -34,7 +34,7 @@ const command: Command = {
     const user_info = await rozod_client.get_user_info_from_id(user_id);
 
     if (user_info == "No user found") {
-      await interaction.followUp({ content: "> The specified user does not exist." });
+      await interaction.editReply({ content: "> The specified user does not exist." });
       return;
     }
 
@@ -147,7 +147,7 @@ const command: Command = {
       .setColor(0xCAA6F7)
       .setThumbnail(await rozod_client.get_user_avatar_icon(String(user_info.id)))
 
-    await interaction.followUp({embeds: [embed]});
+    await interaction.editReply({embeds: [embed]});
   },
 }
 

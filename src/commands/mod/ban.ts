@@ -44,9 +44,19 @@ const command: Command = {
     const reason = interaction.options.getString('reason') ?? "No reason provided";
     const username = interaction.options.getString('roblox-user');
     const user_id = await rozod_client.get_user_id_from_name(username) ?? "No user found";
+    const target_whitelist_data = await database.prisma.tAPWhitelist.findFirst({
+      where: {
+        rx_user_id: user_id
+      }
+    });
 
     if (user_id == "No user found") {
       await interaction.followUp({ content: '> The specified user does not exist.' });
+      return;
+    }
+
+    if (target_whitelist_data && target_whitelist_data.privilege_level < 5) {
+      await interaction.followUp({ content: '> You cannot ban someone with a privilege level higher than your own.' });
       return;
     }
 

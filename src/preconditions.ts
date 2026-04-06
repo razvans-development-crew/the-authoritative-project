@@ -12,6 +12,8 @@ export async function is_dc_user_id_admin(to_check: string): Promise<boolean> {
     }
   });
 
+  if (!whitelist) return false;
+
   return whitelist.privilege_level === 5 || await env_variables.get_env_variable("OWNER") == to_check
 }
 
@@ -21,6 +23,8 @@ export async function is_rx_user_id_admin(to_check: string): Promise<boolean> {
       rx_user_id: Number(to_check)
     }
   });
+
+  if (!whitelist) return false;
 
   return whitelist.privilege_level === 5
 }
@@ -32,6 +36,8 @@ export async function is_dc_user_id_capable_to_ban_users(to_check: string): Prom
     }
   });
 
+  if (!whitelist) return false;
+
   return whitelist.privilege_level >= 3 || await env_variables.get_env_variable("OWNER") == to_check
 }
 
@@ -41,6 +47,8 @@ export async function is_dc_user_id_capable_to_ban_groups(to_check: string): Pro
       discord_user_id: to_check
     }
   });
+
+  if (!whitelist) return false;
 
   return whitelist.privilege_level >= 4 || await env_variables.get_env_variable("OWNER") == to_check
 }

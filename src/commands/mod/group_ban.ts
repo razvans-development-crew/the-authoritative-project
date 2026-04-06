@@ -43,6 +43,11 @@ const command: Command = {
     const reason = interaction.options.getString('reason') ?? "No reason provided";
     const group_id = interaction.options.getNumber('group-id');
     const group_name = await rozod_client.get_group_name_from_id(String(group_id)) ?? "No group found";
+    const target_ban_data = await database.prisma.tAPGlobalGroupBan.findFirst({
+      where: {
+        rx_group_id: group_id
+      }
+    });
 
     if (group_name == "No group found") {
       await interaction.followUp({ content: '> The specified group does not exist.' });
@@ -53,11 +58,7 @@ const command: Command = {
       duration = -1;
     }
 
-    if (await database.prisma.tAPGlobalGroupBan.findFirst({
-      where: {
-        rx_group_id: group_id
-      }
-    })) {
+    if (target_ban_data) {
       try {
         await database.prisma.tAPGlobalGroupBan.update({
           where: {

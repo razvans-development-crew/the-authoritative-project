@@ -59,10 +59,9 @@ const command: Command = {
           + group_info.id
           + "\n**Description**: "
           + group_info.description
-          + "\n**Created At**: "
-          + group_info.createdAt
           + "\n**Is Verified**: "
-          + (group_info.isVerified ? "Yes" : "No"),
+          + (group_info.hasVerifiedBadge ? "Yes" : "No")
+          + `\n**Group Owner**: \`${group_info.owner.displayName}\` (${group_info.owner.username} / \`${group_info.owner.id}\`)`,
         inline: false
       }
     ]
@@ -72,9 +71,9 @@ const command: Command = {
         name: "TAP Information (`v2` / `legacy`)",
         value: "**Banned**: "
           + (group_ban_info.banned_at ? "Yes" : "No")
-          + "\n**Moderator**: "
-          + group_ban_info.moderator_dc_id
-          + "\n**Reason**: "
+          + "\n**Moderator**: `"
+          + group_ban_info.moderator
+          + "`\n**Reason**: "
           + group_ban_info.reason,
         inline: false
       })

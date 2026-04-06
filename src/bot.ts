@@ -91,17 +91,17 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
     // ignore, indicates there is no subcommand
   }
 
-  const command = commands.get(interaction.commandName);
+  const command = commands.get(command_name);
   if (!command) return;
 
   try {
     await command.execute(interaction);
     logger.write(
       LogLevel.Info,
-      `(${interaction.commandName}${command.group ? ` ${command_name}` : ""}) ${interaction.user.globalName} (<@${interaction.user.id}>)`
+      `(${command_name}${command.group ? ` ${command_name}` : ""}) ${interaction.user.globalName} (<@${interaction.user.id}>)`
     );
   } catch (err) {
-    logger.write(LogLevel.Error, `Error executing command ${interaction.commandName}: ${err}`);
+    logger.write(LogLevel.Error, `Error executing command ${command_name}: ${err}`);
     await interaction.reply({
       content: "> An error has occurred while executing the command.",
       ephemeral: true

@@ -39,7 +39,6 @@ export async function register_commands(
       parentCommand.addSubcommand(sub =>
         sub.setName(cmd.data.name).setDescription(cmd.data.description || "No description")
       );
- 
     }
 
     body.push(parentCommand.toJSON());

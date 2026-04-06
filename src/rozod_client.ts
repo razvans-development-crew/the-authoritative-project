@@ -12,6 +12,8 @@ import {
   getGamesMultigetThumbnails
 } from "rozod/lib/endpoints/thumbnailsv1";
 
+import { getGroupsGroupid } from "rozod/lib/endpoints/groupsv1";
+
 export async function get_user_id_from_name(username: string): Promise<string | number> {
   const response = await fetchApi(postUsernamesUsers,
     {
@@ -75,4 +77,12 @@ export async function get_first_game_thumbnail_from_game_id(game_id: string) {
   }, { returnRaw: true });
 
   return (await response.json()).data[0]?.thumbnails[0]?.imageUrl ?? "No thumbnail found";
+}
+
+export async function get_group_info_from_id(group_id: string) {
+  const response = await fetchApi(getGroupsGroupid, {
+    groupId: Number(group_id)
+  }, { returnRaw: true });
+
+  return (await response.json()) ?? "No group found";
 }

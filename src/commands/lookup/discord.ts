@@ -47,11 +47,7 @@ const command: Command = {
     let fields = [
       {
         name: "Discord Information",
-        value: "**Username**: "
-          + user.username
-          + "\n**ID**: "
-          + user.id
-          + "\n**Created At**: "
+        value: "\n**Created At**: "
           + user.createdAt,
         inline: false
       }
@@ -64,9 +60,11 @@ const command: Command = {
           + (user_database_info.rank === 1 ? "Yes" : "No")
           + "\n**Privilege Level**: "
           + String(user_database_info.privilege_level)
-          + "\n**Linked Roblox User**: <@"
+          + "\n**Linked Roblox User**: `"
           + String(user_database_info.rx_user_id)
-          + ">\n**Rank**: "
+          + "` ("
+          + user_database_info.rx_user_name
+          + ") \n**Rank**: "
           + user_database_info.rank,
         inline: false
       })
@@ -77,20 +75,22 @@ const command: Command = {
           + (user_database_info.rank === 1 ? "Yes" : "No")
           + "\n**Privilege Level**: "
           + String(user_database_info.privilege_level)
-          + "\n**Linked Roblox User**: <@"
+          + "\n**Linked Roblox User**: `"
           + String(user_database_info.rx_user_id)
-          + ">\n**Rank**: " + user_database_info.rank,
+          + "` ("
+          + user_database_info.rx_user_name
+          + ") \n**Rank**: "
+          + user_database_info.rank,
         inline: false
       })
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`<@${user.id}> (\`${user.id}\`)`)
+      .setTitle(`${user.displayName} (@${user.globalName} / \`${user.id}\`)`)
       .setURL(`https://discord.com/users/${user.id}`)
-      .setDescription(user.tag)
       .addFields(fields)
       .setColor(0xCAA6F7)
-      .setImage(user.avatarURL())
+      .setThumbnail(user.avatarURL())
 
     await interaction.followUp({embeds: [embed]});
   }

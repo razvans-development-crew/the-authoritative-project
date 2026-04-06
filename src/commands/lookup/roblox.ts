@@ -32,6 +32,7 @@ const command: Command = {
     const user_info = await rozod_client.get_user_info_from_id(user_id);
 
     let user_database_info;
+    let user_ban_info;
 
     if (interaction.options.getBoolean('legacy-lookup') === true) {
       user_database_info = await database.prisma.whitelist.findFirst({
@@ -41,6 +42,20 @@ const command: Command = {
       }) ?? "No info found";
     } else {
       user_database_info = await database.prisma.tAPWhitelist.findFirst({
+        where: {
+          rx_user_name: username
+        }
+      }) ?? "No info found";
+    }
+
+    if (interaction.options.getBoolean('legacy-lookup') === true) {
+      user_ban_info = await database.prisma.global_user_ban.findFirst({
+        where: {
+          rx_user_name: username
+        }
+      }) ?? "No info found";
+    } else {
+      user_ban_info = await database.prisma.tAPGlobalUserBan.findFirst({
         where: {
           rx_user_name: username
         }
@@ -91,13 +106,37 @@ const command: Command = {
       })
     }
 
+    if (interaction.options.getBoolean('legacy-lookup') === true && user_ban_info != "No info found") {
+      fields.push({
+        name: "TAP Information (`v2` / `legacy`)",
+        value: "**Banned**: "
+          + (user_ban_info.banned_at ? "Yes" : "No")
+          + "\n**Moderator**: "
+          + user_ban_info.moderator_dc_id
+          + "\n**Reason**: "
+          + user_ban_info.reason,
+        inline: false
+      })
+    } else if (interaction.options.getBoolean('legacy-lookup') === false && user_ban_info != "No info found") {
+      fields.push({
+        name: "TAP Information (`v3`)",
+        value: "**Banned**: "
+          + (user_ban_info.banned_at ? "Yes" : "No")
+          + "\n**Moderator**: "
+          + user_ban_info.moderator_dc_id
+          + "\n**Reason**: "
+          + user_ban_info.reason,
+        inline: false
+      })
+    }
+
     const embed = new EmbedBuilder()
       .setTitle(`@${username} (\`${user_info.id}\`)`)
       .setURL(`https://fxroblox.com/users/${user_info.id}`)
       .setDescription(user_info.description)
       .addFields(fields)
       .setColor(0xCAA6F7)
-      .setImage(await rozod_client.get_user_avatar_icon(user_info.id))
+      .setThumbnail(await rozod_client.get_user_avatar_icon(String(user_info.id)))
 
     await interaction.followUp({embeds: [embed]});
   },

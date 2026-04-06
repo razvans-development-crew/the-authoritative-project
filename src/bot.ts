@@ -1,6 +1,6 @@
 import { logger } from "./logging.ts";
 import { get_env_variable } from "./env_variables.ts";
-import type { BaseInteraction, CommandInteraction, Interaction, InteractionResponse } from "discord.js";
+import { UserFlagsBitField, type BaseInteraction, type CommandInteraction, type Interaction, type InteractionResponse } from "discord.js";
 import { load_commands } from "./command_loader.ts";
 import { register_commands } from "./register_commands.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -12,12 +12,19 @@ const commands = await load_commands(commands_path);
 const database = require("./database.ts");
 const TOKEN = await get_env_variable("TOKEN")!;
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
+const {
+  DefaultWebSocketManagerOptions: { identifyProperties }
+} = require("@discord.js/ws");
 
 const { 
   Client, Collection, Events, 
   GatewayIntentBits, MessageFlags, 
   Partials, Routes, REST, ActivityType
 } = require('discord.js');
+
+identifyProperties.browser = "Discord iOS"; // discord embedded
+identifyProperties.device = "linux"; // xbox series x/s
+identifyProperties.os = "linux"; // linux
 
 export const client = new Client({
   intents: [
@@ -74,20 +81,32 @@ client.once(Events.ClientReady, async (readyClient: typeof Client) => {
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 	if (!interaction.isChatInputCommand()) return;
+  
+  let command_name = interaction.commandName;
 
-    const command = commands.get(interaction.commandName);
-    if (!command) return;
+  try {
+    const sub = interaction.options.getSubcommand(false);
+    if (sub) command_name = sub;
+  } catch {
+    // ignore, indicates there is no subcommand
+  }
 
-    try {
-      await command.execute(interaction);
-      logger.write(LogLevel.Info, `(${interaction.commandName}) ${interaction.user.globalName} (<@${interaction.user.id}>)`);
-    } catch (err) {
-      logger.write(LogLevel.Error, `Error executing command ${interaction.commandName}: ${err}`);
-      await interaction.reply({
-        content: "> An error has occurred while executing the command.",
-        ephemeral: true
-      });
-    }
+  const command = commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+    logger.write(
+      LogLevel.Info,
+      `(${interaction.commandName}${command.group ? ` ${command_name}` : ""}) ${interaction.user.globalName} (<@${interaction.user.id}>)`
+    );
+  } catch (err) {
+    logger.write(LogLevel.Error, `Error executing command ${interaction.commandName}: ${err}`);
+    await interaction.reply({
+      content: "> An error has occurred while executing the command.",
+      ephemeral: true
+    });
+  }
 });
 
 export async function run_bot(): Promise<void> {

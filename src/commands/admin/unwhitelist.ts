@@ -63,7 +63,7 @@ const command: Command = {
       return;
     }
 
-    await interaction.followUp({ content: `> [@${discord_user?.username}](https://discord.com/users/${discord_user?.id}) has been unwhitelisted.` });
+    await interaction.followUp({ content: `> <@${discord_user?.id}> has been unwhitelisted.` });
   }
 }
 

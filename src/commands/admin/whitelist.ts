@@ -61,9 +61,11 @@ const command: Command = {
       return;
     }
 
-    if (admin_whitelist_data.privilege_level < privilege_level) {
-      await interaction.followUp({ content: '> You cannot whitelist someone with a privilege level higher than your own.' });
-      return;
+    if (await preconditions.is_dc_user_id_owner(interaction.user.id) === false) {
+      if (admin_whitelist_data.privilege_level < privilege_level) {
+        await interaction.followUp({ content: '> You cannot whitelist someone with a privilege level higher than your own.' });
+        return;
+      }
     }
 
     if (privilege_level > 6) {

@@ -28,7 +28,7 @@ export async function is_rx_user_id_admin(to_check: string): Promise<boolean> {
 export async function is_dc_user_id_capable_to_ban_users(to_check: string): Promise<boolean> {
   let whitelist = await database.prisma.tAPWhitelist.findFirst({
     where: {
-      dc_user_id: to_check
+      discord_user_id: to_check
     }
   });
 
@@ -38,7 +38,7 @@ export async function is_dc_user_id_capable_to_ban_users(to_check: string): Prom
 export async function is_dc_user_id_capable_to_ban_groups(to_check: string): Promise<boolean> {
   let whitelist = await database.prisma.tAPWhitelist.findFirst({
     where: {
-      dc_user_id: to_check
+      discord_user_id: to_check
     }
   });
 

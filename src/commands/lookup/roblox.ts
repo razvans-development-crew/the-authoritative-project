@@ -117,7 +117,7 @@ const command: Command = {
         value: "**Banned**: "
           + (user_ban_info.banned_at ? "Yes" : "No")
           + "\n**Moderator**: "
-          + user_ban_info.moderator_dc_id
+          + user_ban_info.moderator
           + "\n**Reason**: "
           + user_ban_info.reason,
         inline: false

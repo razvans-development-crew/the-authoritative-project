@@ -117,7 +117,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
       `(${command_name}${command.group ? ` ${command_name}` : ""}) ${interaction.user.globalName} (<@${interaction.user.id}>)`
     );
   } catch (err) {
-    logger.write(LogLevel.Error, `Error executing command ${command_name}: ${err}`);
+    logger.write(LogLevel.Warn, `Exception while executing command ${command_name}: ${err}`);
     await interaction.reply({
       content: "> An error has occurred while executing the command.",
       flags: MessageFlags.Ephemeral

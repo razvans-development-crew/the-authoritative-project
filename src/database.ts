@@ -15,7 +15,7 @@ export async function get_whitelists() {
   let whitelists: Record<string, any> = {};
 
   for (let whitelist of raw_whitelists) {
-    whitelists[String(whitelist.discord_user_id)] = { 
+    whitelists[String(whitelist.discord_user_id)] = {
       discord_user_id: whitelist.discord_user_id,
       rx_user_id: Number(whitelist.rx_user_id),
       rx_user_name: whitelist.rx_user_name,
@@ -115,4 +115,45 @@ export async function get_legacy_global_group_bans() {
 
 export async function jsonify(obj: any) {
   return JSON.stringify(obj);
+}
+
+export async function get_expired_bans() {
+  let current_bans = await prisma.tAPGlobalUserBan.findMany();
+  let expired_bans: Record<string, any> = {};
+
+  for (let ban of current_bans) {
+    if (ban.duration == -1 ) { continue };
+
+    if ((new Date(ban.banned_at).getTime() + ban.duration * 24 * 60 * 60 * 1000) < new Date().getTime()) {
+      expired_bans[String(ban.rx_user_id)] = {
+        moderator_dc_id: ban.moderator_dc_id,
+        rx_user_id: Number(ban.rx_user_id),
+        rx_user_name: ban.rx_user_name,
+        reason: ban.reason,
+        duration: ban.duration,
+        banned_at: ban.banned_at
+      }
+    }
+  }
+
+  return expired_bans
+}
+
+export async function get_expired_group_bans() {
+  let current_bans = await prisma.tAPGlobalGroupBan.findMany();
+  let expired_bans: Record<string, any> = {};
+
+  for (let ban of current_bans) {
+    if ((new Date(ban.banned_at).getTime() + ban.duration * 24 * 60 * 60 * 1000) < new Date().getTime()) {
+      expired_bans[String(ban.rx_group_id)] = {
+        moderator_dc_id: ban.moderator_dc_id,
+        rx_group_id: ban.rx_group_id,
+        rx_group_name: ban.rx_group_name,
+        reason: ban.reason,
+        duration: ban.duration,
+      }
+    }
+  }
+
+  return expired_bans
 }

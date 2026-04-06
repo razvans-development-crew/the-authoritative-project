@@ -4,6 +4,7 @@ import { UserFlagsBitField, type BaseInteraction, type CommandInteraction, type 
 import { load_commands } from "./command_loader.ts";
 import { register_commands } from "./register_commands.ts";
 import { LogLevel } from "@sapphire/framework";
+import { watch_for_expired_bans } from "./watch_for_expired_bans.ts";
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -77,6 +78,7 @@ export const client = new Client({
 
 client.once(Events.ClientReady, async (readyClient: typeof Client) => {
   logger.write(LogLevel.Info, `Logged in as ${readyClient.user?.tag}`);
+  watch_for_expired_bans();
 })
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {

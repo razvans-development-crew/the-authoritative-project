@@ -87,3 +87,11 @@ export async function get_group_info_from_id(group_id: string) {
 
   return (await response.json()) ?? "No group found";
 }
+
+export async function get_group_name_from_id(group_id: string) {
+  const response = await fetchApi(getGroupsGroupid, {
+    groupId: Number(group_id)
+  }, { returnRaw: true });
+
+  return (await response.json()).name ?? "No group found";
+}

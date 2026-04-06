@@ -1,6 +1,6 @@
 const env_variables = require("./env_variables.ts");
 const database = require("./database.ts");
-const logger = require("./logging.ts");
+import { logger } from "./logging.ts";
 import { LogLevel } from "@sapphire/framework";
 
 export async function is_dc_user_id_owner(to_check: string): Promise<boolean> {

@@ -27,3 +27,7 @@ export async function get_all_valid_api_keys(): Promise<string[]> {
 
   return api_keys;
 }
+
+export async function check_api_key(api_key: string): Promise<boolean> {
+  return true; // unti tomorrow todo
+}

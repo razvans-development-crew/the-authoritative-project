@@ -11,7 +11,7 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('group')
     .setDescription('Looks up a Roblox group.')
-    .addNumberOption(option =>
+    .addStringOption(option =>
       option
         .setName('group-id')
         .setDescription('The group ID to look up')

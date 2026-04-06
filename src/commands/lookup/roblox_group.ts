@@ -54,16 +54,14 @@ const command: Command = {
 
     let fields = [
       {
-        name: "Roblox Group Information",
+        name: "Group Information",
         value: "**Name**: "
           + group_info.name
-          + "\n**ID**: "
+          + "\n**ID**: `"
           + group_info.id
-          + "\n**Description**: "
-          + group_info.description
-          + "\n**Is Verified**: "
+          + "`\n**Is Verified**: "
           + (group_info.hasVerifiedBadge ? "Yes" : "No")
-          + `\n**Group Owner**: \`${group_info.owner.displayName}\` (${group_info.owner.username} / \`${group_info.owner.id}\`)`,
+          + `\n**Group Owner**: \`${group_info.owner.displayName}\` (${group_info.owner.username} / \`${group_info.owner.userId ?? "No ID found"}\`)`,
         inline: false
       }
     ]
@@ -95,7 +93,7 @@ const command: Command = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`#${group_info.name} (\`${group_info.id}\`)`)
+      .setTitle(`${group_info.name} (\`${group_info.id}\`)`)
       .setURL(`https://fxroblox.com/groups/${group_info.id}`)
       .setDescription(group_info.description ?? "No description provided")
       .addFields(fields)

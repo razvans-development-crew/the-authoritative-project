@@ -23,7 +23,9 @@ const command: Command = {
         .setRequired(false)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    if (!interaction.deferred) {
+      await interaction.deferReply();
+    }
 
     const user = interaction.options.getUser('user') ?? interaction.user;
 

@@ -11,7 +11,7 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('group')
     .setDescription('Looks up a Roblox group.')
-    .addStringOption(option =>
+    .addNumberOption(option =>
       option
         .setName('group-id')
         .setDescription('The group ID to look up')
@@ -24,9 +24,11 @@ const command: Command = {
         .setRequired(false)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    if (!interaction.deferred) {
+      await interaction.deferReply();
+    }
 
-    const group_id = interaction.options.getString('group-id');
+    const group_id = interaction.options.getNumber('group-id');
     const group_info = await rozod_client.get_group_info_from_id(String(group_id));
 
     if (group_info == "No group found") {

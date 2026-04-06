@@ -5,7 +5,6 @@ import {
 import { type Command } from "../../types/Command.ts";
 
 const database = require("../../database.ts");
-const rozod_client = require("../../rozod_client.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -14,8 +13,8 @@ const command: Command = {
     .addUserOption(option =>
       option
         .setName('user')
-        .setDescription('The user to look up. Defaults to the user invoking the command.')
-        .setRequired(false)
+        .setDescription('The user to look up.')
+        .setRequired(true)
     )
     .addBooleanOption(
       option => option

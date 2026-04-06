@@ -9,7 +9,7 @@ const rozod_client = require("../../rozod_client.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()
-    .setName('roblox-group')
+    .setName('group')
     .setDescription('Looks up a Roblox group.')
     .addNumberOption(option =>
       option
@@ -27,8 +27,7 @@ const command: Command = {
     await interaction.deferReply();
 
     const group_id = interaction.options.getString('group-id');
-
-    const group_info = await rozod_client.get_group_info_from_id(group_id);
+    const group_info = await rozod_client.get_group_info_from_id(String(group_id));
 
     let group_ban_info;
 

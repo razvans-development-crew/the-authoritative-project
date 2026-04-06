@@ -99,7 +99,7 @@ const command: Command = {
       return;
     }
 
-    await interaction.followUp({ content: `> [@${username}](https://fxroblox.com/users/${roblox_user_id}) has been whitelisted.` });
+    await interaction.followUp({ content: `> [@${username}](https://fxroblox.com/users/${roblox_user_id}) has been whitelisted as <@${discord_user?.id}>.` });
   }
 }
 

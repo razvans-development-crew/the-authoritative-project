@@ -104,7 +104,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
     logger.write(LogLevel.Error, `Error executing command ${command_name}: ${err}`);
     await interaction.reply({
       content: "> An error has occurred while executing the command.",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 });

@@ -96,7 +96,7 @@ const command: Command = {
       .setDescription(group_info.description)
       .addFields(fields)
       .setColor(0xCAA6F7)
-      .setImage(await rozod_client.get_group_icon(String(group_info.id)))
+      .setThumbnail(await rozod_client.get_group_icon(String(group_info.id)))
 
     await interaction.followUp({embeds: [embed]});
   }

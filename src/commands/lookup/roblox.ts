@@ -76,11 +76,9 @@ const command: Command = {
           + user_info.name
           + "\n**ID**: "
           + user_info.id
-          + "\n**Status**: "
-          + user_info.status
-          + "\n**Created At**: "
-          + user_info.createdAt
-          + "\n**Has Verified Badge**: "
+          + "\n**Created At**: `"
+          + user_info.created
+          + "`\n**Has Verified Badge**: "
           + (user_info.hasVerifiedBadge ? "Yes" : "No"),
         inline: false
       }

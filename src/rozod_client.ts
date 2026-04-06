@@ -40,7 +40,8 @@ export async function get_user_avatar_icon(user_id: string) {
   const response = await fetchApi(getUsersAvatar, {
     userIds: [Number(user_id)],
     format: "Png",
-    isCircular: false
+    isCircular: false,
+    size: "720x720"
   }, { returnRaw: true });
 
   return (await response.json()).data[0]?.imageUrl ?? "No avatar found";

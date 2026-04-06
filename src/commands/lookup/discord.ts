@@ -86,7 +86,7 @@ const command: Command = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`${user.displayName} (@${user.globalName} / \`${user.id}\`)`)
+      .setTitle(`${user.displayName} (@${user.username} / \`${user.id}\`)`)
       .setURL(`https://discord.com/users/${user.id}`)
       .addFields(fields)
       .setColor(0xCAA6F7)

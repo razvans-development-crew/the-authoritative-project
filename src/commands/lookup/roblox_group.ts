@@ -11,10 +11,10 @@ const command: Command = {
   data: new SlashCommandBuilder()
     .setName('roblox-group')
     .setDescription('Looks up a Roblox group.')
-    .addStringOption(option =>
+    .addNumberOption(option =>
       option
-        .setName('group-name')
-        .setDescription('The group name to look up')
+        .setName('group-id')
+        .setDescription('The group ID to look up')
         .setRequired(true)
     )
     .addBooleanOption(
@@ -26,9 +26,8 @@ const command: Command = {
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
-    const group_name = interaction.options.getString('group-name');
+    const group_id = interaction.options.getString('group-id');
 
-    const group_id = await rozod_client.get_group_id_from_name(group_name);
     const group_info = await rozod_client.get_group_info_from_id(group_id);
 
     let group_ban_info;
@@ -36,13 +35,13 @@ const command: Command = {
     if (interaction.options.getBoolean('legacy-lookup') === true) {
       group_ban_info = await database.prisma.global_group_ban.findFirst({
         where: {
-          group_name: group_name
+          group_id: group_id,
         }
       }) ?? "No info found"
     } else {
       group_ban_info = await database.prisma.tAPGlobalGroupBan.findFirst({
         where: {
-          rx_group_name: group_name,
+          rx_group_id: group_id,
         }
       }) ?? "No info found"
     }
@@ -93,7 +92,7 @@ const command: Command = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`#${group_name} (\`${group_info.id}\`)`)
+      .setTitle(`#${group_info.name} (\`${group_info.id}\`)`)
       .setURL(`https://fxroblox.com/groups/${group_info.id}`)
       .setDescription(group_info.description)
       .addFields(fields)

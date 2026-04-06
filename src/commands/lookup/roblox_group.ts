@@ -103,3 +103,5 @@ const command: Command = {
     await interaction.followUp({embeds: [embed]});
   }
 }
+
+export default command;

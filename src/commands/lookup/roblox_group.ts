@@ -39,13 +39,13 @@ const command: Command = {
     if (interaction.options.getBoolean('legacy-lookup') === true) {
       group_ban_info = await database.prisma.global_group_ban.findFirst({
         where: {
-          group_id: group_id,
+          group_id: Number(group_id),
         }
       }) ?? "No info found"
     } else {
       group_ban_info = await database.prisma.tAPGlobalGroupBan.findFirst({
         where: {
-          rx_group_id: group_id,
+          rx_group_id: Number(group_id),
         }
       }) ?? "No info found"
     }

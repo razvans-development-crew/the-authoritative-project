@@ -60,3 +60,5 @@ const command: Command = {
     await interaction.followUp({ content: `> [#${group_id}](https://fxroblox.com/groups/${group_id}) has been unbanned.` });
   }
 }
+
+export default command;

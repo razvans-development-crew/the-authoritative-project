@@ -119,20 +119,20 @@ export async function jsonify(obj: any) {
 
 export async function get_expired_bans() {
   let current_bans = await prisma.tAPGlobalUserBan.findMany();
-  let expired_bans: Record<string, any> = {};
+  let expired_bans: Array<any> = [];
 
   for (let ban of current_bans) {
     if (ban.duration == -1 ) { continue };
 
     if ((new Date(ban.banned_at).getTime() + ban.duration * 24 * 60 * 60 * 1000) < new Date().getTime()) {
-      expired_bans[String(ban.rx_user_id)] = {
+      expired_bans.push({
         moderator_dc_id: ban.moderator_dc_id,
         rx_user_id: Number(ban.rx_user_id),
         rx_user_name: ban.rx_user_name,
         reason: ban.reason,
         duration: ban.duration,
         banned_at: ban.banned_at
-      }
+      })
     }
   }
 
@@ -141,17 +141,17 @@ export async function get_expired_bans() {
 
 export async function get_expired_group_bans() {
   let current_bans = await prisma.tAPGlobalGroupBan.findMany();
-  let expired_bans: Record<string, any> = {};
+  let expired_bans: Array<any> = [];
 
   for (let ban of current_bans) {
     if ((new Date(ban.banned_at).getTime() + ban.duration * 24 * 60 * 60 * 1000) < new Date().getTime()) {
-      expired_bans[String(ban.rx_group_id)] = {
+      expired_bans.push({
         moderator_dc_id: ban.moderator_dc_id,
         rx_group_id: ban.rx_group_id,
         rx_group_name: ban.rx_group_name,
         reason: ban.reason,
         duration: ban.duration,
-      }
+      })
     }
   }
 

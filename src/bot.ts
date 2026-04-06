@@ -17,6 +17,8 @@ const {
   DefaultWebSocketManagerOptions: { identifyProperties }
 } = require("@discordjs/ws");
 
+let ALREADY_RAN_EXPIRED_BANS_WATCHDOG = false;
+
 const {
   Client, Collection, Events,
   GatewayIntentBits, MessageFlags,
@@ -78,7 +80,11 @@ export const client = new Client({
 
 client.once(Events.ClientReady, async (readyClient: typeof Client) => {
   logger.write(LogLevel.Info, `Logged in as ${readyClient.user?.tag}`);
-  watch_for_expired_bans();
+
+  if (!ALREADY_RAN_EXPIRED_BANS_WATCHDOG) {
+    ALREADY_RAN_EXPIRED_BANS_WATCHDOG = true;
+    watch_for_expired_bans();
+  }
 })
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {

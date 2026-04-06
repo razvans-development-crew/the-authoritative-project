@@ -61,8 +61,6 @@ const command: Command = {
           + group_info.description
           + "\n**Created At**: "
           + group_info.createdAt
-          + "\n**Updated At**: "
-          + group_info.updatedAt
           + "\n**Is Verified**: "
           + (group_info.isVerified ? "Yes" : "No"),
         inline: false

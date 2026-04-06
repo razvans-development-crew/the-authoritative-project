@@ -95,10 +95,16 @@ const command: Command = {
     const embed = new EmbedBuilder()
       .setTitle(`${group_info.name} (\`${group_info.id}\`)`)
       .setURL(`https://fxroblox.com/groups/${group_info.id}`)
-      .setDescription(group_info.description ?? "No description provided")
+      // .setDescription(group_info.description ?? "No description provided") // this line was problematic
       .addFields(fields)
       .setColor(0xCAA6F7)
       .setThumbnail(await rozod_client.get_group_icon(String(group_info.id)))
+
+    try {
+      embed.setDescription(group_info.description ?? "No description provided")
+    } catch {
+      embed.setDescription("No description provided")
+    }
 
     await interaction.followUp({embeds: [embed]});
   }

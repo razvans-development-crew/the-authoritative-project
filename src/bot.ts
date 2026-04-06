@@ -14,11 +14,11 @@ const TOKEN = await get_env_variable("TOKEN")!;
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
 const {
   DefaultWebSocketManagerOptions: { identifyProperties }
-} = require("@discord.js/ws");
+} = require("@discordjs/ws");
 
-const { 
-  Client, Collection, Events, 
-  GatewayIntentBits, MessageFlags, 
+const {
+  Client, Collection, Events,
+  GatewayIntentBits, MessageFlags,
   Partials, Routes, REST, ActivityType
 } = require('discord.js');
 
@@ -81,7 +81,7 @@ client.once(Events.ClientReady, async (readyClient: typeof Client) => {
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 	if (!interaction.isChatInputCommand()) return;
-  
+
   let command_name = interaction.commandName;
 
   try {

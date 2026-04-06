@@ -40,6 +40,11 @@ const command: Command = {
       await interaction.deferReply();
     }
 
+    if (await preconditions.is_dc_user_id_admin(interaction.user.id) === false) {
+      await interaction.followUp({ content: '> Missing privilege level: `5`.' });
+      return;
+    }
+
     const username = interaction.options.getString('roblox-user');
     const discord_user = interaction.options.getUser('discord-user');
     const rank = interaction.options.getString('rank') ?? "user";
@@ -50,11 +55,6 @@ const command: Command = {
       }
     });
     const roblox_user_id = await rozod_client.get_user_id_from_name(username) ?? "No user found";
-
-    if (admin_whitelist_data.privilege_level < 5) {
-      await interaction.followUp({ content: '> Missing privilege level: `5`.' });
-      return;
-    }
 
     if (roblox_user_id == "No user found") {
       await interaction.followUp({ content: '> The specified user does not exist.' });

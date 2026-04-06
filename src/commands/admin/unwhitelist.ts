@@ -6,6 +6,7 @@ import { LogLevel } from "@sapphire/framework";
 const database = require("../../database.ts");
 const rozod_client = require("../../rozod_client.ts");
 const preconditions = require("../../preconditions.ts");
+const env_variables = require("../../env_variables.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -22,6 +23,11 @@ const command: Command = {
       await interaction.deferReply();
     }
 
+    if (await preconditions.is_dc_user_id_admin(interaction.user.id) === false) {
+      await interaction.followUp({ content: '> Missing privilege level: `5`.' });
+      return;
+    }
+
     const discord_user = interaction.options.getUser('discord-user');
     const admin_whitelist_data = await database.prisma.tAPWhitelist.findFirst({
       where: {
@@ -33,11 +39,6 @@ const command: Command = {
         discord_user_id: discord_user?.id
       }
     });
-
-    if (admin_whitelist_data.privilege_level < 5) {
-      await interaction.followUp({ content: '> Missing privilege level: `5`.' });
-      return;
-    }
 
     if (!target_whitelist_data) {
       await interaction.followUp({ content: '> The specified user is not whitelisted.' });

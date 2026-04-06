@@ -12,9 +12,10 @@ export async function is_dc_user_id_admin(to_check: string): Promise<boolean> {
     }
   });
 
+  if (await env_variables.get_env_variable("OWNER") == to_check) return true;
   if (!whitelist) return false;
 
-  return whitelist.privilege_level === 5 || await env_variables.get_env_variable("OWNER") == to_check
+  return whitelist.privilege_level === 5
 }
 
 export async function is_rx_user_id_admin(to_check: string): Promise<boolean> {
@@ -36,9 +37,10 @@ export async function is_dc_user_id_capable_to_ban_users(to_check: string): Prom
     }
   });
 
+  if (await env_variables.get_env_variable("OWNER") == to_check) return true;
   if (!whitelist) return false;
 
-  return whitelist.privilege_level >= 3 || await env_variables.get_env_variable("OWNER") == to_check
+  return whitelist.privilege_level >= 3
 }
 
 export async function is_dc_user_id_capable_to_ban_groups(to_check: string): Promise<boolean> {
@@ -48,7 +50,8 @@ export async function is_dc_user_id_capable_to_ban_groups(to_check: string): Pro
     }
   });
 
+  if (await env_variables.get_env_variable("OWNER") == to_check) return true;
   if (!whitelist) return false;
 
-  return whitelist.privilege_level >= 4 || await env_variables.get_env_variable("OWNER") == to_check
+  return whitelist.privilege_level >= 4
 }

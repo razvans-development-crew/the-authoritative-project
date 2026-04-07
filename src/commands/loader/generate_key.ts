@@ -3,7 +3,6 @@ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { get_all_valid_api_keys } from "../../security.ts";
 
 const preconditions = require("../../preconditions.ts");
 

@@ -41,3 +41,5 @@ export const command: Command = {
     await interaction.followUp({ content: '> Signature is valid.' });
   }
 }
+
+export default command;

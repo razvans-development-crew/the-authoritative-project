@@ -8,10 +8,10 @@ const AES_INITIALIZATION_VECTOR = await get_env_variable("AES_INITIALIZATION_VEC
 const SECRET_KEY = await get_env_variable("SECRET_KEY");                               // 512-bit (64-byte) key
 const SIGNATURE_KEY = await get_env_variable("SIGNATURE_KEY");                         // 512-bit (64-byte) key
 
-export async function get_all_valid_api_keys(): Promise<string[]> {
+export async function get_all_valid_api_keys(): Promise<Array<string>> {
   logger.write(LogLevel.Info, "API keys are being generated...");
 
-  const api_keys: string[] = [];
+  const api_keys: Array<string> = [];
 
   // "DATE_TIME_STRING:SECRET_KEY"
   for (let i = 0; i < 8000; i++) {
@@ -21,7 +21,7 @@ export async function get_all_valid_api_keys(): Promise<string[]> {
     let encrypted = cipher.update(date_time_string + ":" + SECRET_KEY, "utf8", "hex");
     encrypted += cipher.final("hex");
 
-    api_keys.push(Buffer.from(encrypted).toString("base64"))
+    api_keys.push(String(Buffer.from(encrypted).toString("base64")))
   }
 
   return api_keys; // array of encrypted API keys
@@ -42,8 +42,10 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
       let decrypted_api_key_to_check = decipher.update(Buffer.from(encrypted_api_key, "base64").toString("utf8"), "hex", "utf8");
       decrypted_api_key_to_check += decipher.final("utf8");
 
-      let decrypted_api_key_to_check_against = decipher.update(Buffer.from(encrypted_api_key, "base64").toString("utf8"), "hex", "utf8");
-      decrypted_api_key_to_check_against += decipher.final("utf8");
+      // trying to add data to the previous decipher will cause an unsupported state error, therefore we create a new one
+      const new_decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
+      let decrypted_api_key_to_check_against = new_decipher.update(Buffer.from(encrypted_api_key, "base64").toString("utf8"), "hex", "utf8");
+      decrypted_api_key_to_check_against += new_decipher.final("utf8");
 
       let decrypted_key_without_signature = decrypted_api_key_to_check.split(":")[0] + ":" + decrypted_api_key_to_check.split(":")[1];
 

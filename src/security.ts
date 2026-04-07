@@ -68,6 +68,19 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
     return false;
   }
 
+  logger.write(
+    LogLevel.Info,
+    `API key did not have any missing fields: ${encrypted_api_key}`,
+    {
+      missing_fields: {
+        comment: "false = not missing, true = missing",
+        timestamp: !decrypted_data_to_check.timestamp,
+        secret_key: !decrypted_data_to_check.secret_key,
+        signature: !decrypted_data_to_check.signature
+      }
+    }
+  )
+
   if (
     (await utc_string_to_unix_ms(
       decrypted_data_to_check.timestamp
@@ -84,6 +97,16 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
     );
     return false;
   }
+
+  logger.write(
+    LogLevel.Info,
+    `API key lasted for less than 7.5 seconds: ${encrypted_api_key}`,
+    {
+      lasted_for: await utc_string_to_unix_ms(
+        decrypted_data_to_check.timestamp
+      ) - Date.now()
+    }
+  )
 
   const expected_signature = await sign(
     decrypted_data_to_check.timestamp
@@ -102,6 +125,15 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
     });
     return false;
   }
+
+  logger.write(
+    LogLevel.Info,
+    `API key signature matched: ${encrypted_api_key}`,
+    {
+      expected_signature: expected_signature,
+      actual_signature: decrypted_data_to_check.signature
+    }
+  )
 
   return true;
 }

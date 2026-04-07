@@ -6,7 +6,7 @@ import { join } from "path";
 const env_variables = require("./env_variables.ts");
 const app = new Elysia();
 
-await load_routes(app, join(import.meta.dir, "routes"));
+load_routes(app, join(import.meta.dir, "routes"));
 
 export async function run_backend_server(): Promise<void> {
   app.use(logger({

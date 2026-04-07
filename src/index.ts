@@ -6,8 +6,6 @@ import { LogLevel } from "@sapphire/framework";
 const database = require("./database.ts");
 
 async function main() {
-  
-
   await run_backend_server().catch((err) => {
     database.disconnect();
     logger.write(LogLevel.Warn, `Exception while running backend server ${err}`);

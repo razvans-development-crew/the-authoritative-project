@@ -6,7 +6,7 @@ import { join } from "path";
 const env_variables = require("./env_variables.ts");
 const app = new Elysia();
 
-load_routes(app, join(import.meta.dir, "routes"));
+await load_routes(app, join(import.meta.dir, "routes"));
 
 export async function run_backend_server(): Promise<void> {
   app.use(logger({
@@ -14,11 +14,11 @@ export async function run_backend_server(): Promise<void> {
     formatters: {
       bindings: () => ({ pid: null })
     },
-    transport: { 
-      target: "pino-pretty", 
-      options: { 
-        colorize: true 
-      } 
+    transport: {
+      target: "pino-pretty",
+      options: {
+        colorize: true
+      }
     },
     autoLogging: true
   }));

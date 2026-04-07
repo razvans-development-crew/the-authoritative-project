@@ -37,5 +37,7 @@ export const command: Command = {
       await interaction.followUp({ content: '> Invalid signature.' });
       return;
     }
+
+    await interaction.followUp({ content: '> Signature is valid.' });
   }
 }

@@ -37,6 +37,8 @@ export const command: Command = {
       await interaction.followUp({ content: '> Invalid authentication key.' });
       return;
     }
+
+    await interaction.followUp({ content: '> Authentication key is valid.' });
   }
 }
 

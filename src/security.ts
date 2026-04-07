@@ -14,7 +14,7 @@ export async function get_all_valid_api_keys(): Promise<Array<string>> {
   const api_keys: Array<string> = [];
 
   // "DATE_TIME_STRING:SECRET_KEY"
-  for (let i = 0; i < 8000; i++) {
+  for (let i = 0; i < 15000; i++) {
     const date_time_string = new Date().toISOString().slice(0, 19);
     const cipher = crypto.createCipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
 
@@ -53,7 +53,7 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
 
       // trying to add data to the previous decipher will cause an unsupported state error, therefore we create a new one
       const new_decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
-      let decrypted_api_key_to_check_against = new_decipher.update(Buffer.from(encrypted_api_key, "base64").toString("utf8"), "hex", "utf8");
+      let decrypted_api_key_to_check_against = new_decipher.update(Buffer.from(api_key, "base64").toString("utf8"), "hex", "utf8");
       decrypted_api_key_to_check_against += new_decipher.final("utf8");
 
       let decrypted_key_without_signature = decrypted_api_key_to_check.split(":")[0] + ":" + decrypted_api_key_to_check.split(":")[1];

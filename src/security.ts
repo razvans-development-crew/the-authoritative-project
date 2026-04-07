@@ -34,6 +34,15 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
   // then check if their decrypted versions are valid
   // then check if they are properly signatured
 
+  // we first check if the api key is first encoded with base64
+
+  try {
+    Buffer.from(encrypted_api_key, "base64").toString("utf8");
+  } catch {
+    logger.write(LogLevel.Info, "The specified API key is not base64 encoded");
+    return false;
+  }
+
   const api_keys = await get_all_valid_api_keys();
 
   for (const api_key of api_keys) {

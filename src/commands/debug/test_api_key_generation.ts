@@ -49,8 +49,13 @@ export const command: Command = {
       let decrypted_key_without_signature = decrypted_api_key_to_check.split(":")[0] + ":" + decrypted_api_key_to_check.split(":")[1];
 
       const signature = crypto.createHash("sha256").update(decrypted_key_without_signature + ":" + SIGNATURE_KEY).digest("hex");
+      const decrypted_api_key_with_signature = decrypted_api_key_to_check + ":" + signature
 
-      signed_encrypted_api_key = Buffer.from(decrypted_api_key_to_check + ":" + signature).toString("base64");
+      const new_decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
+      let encrypted_api_key_with_signature = new_decipher.update(decrypted_api_key_with_signature, "utf8", "hex");
+      encrypted_api_key_with_signature += new_decipher.final("utf8");
+
+      signed_encrypted_api_key = Buffer.from(encrypted_api_key_with_signature).toString("base64");
     }
 
     const is_api_key_valid = await check_api_key(signed_encrypted_api_key);

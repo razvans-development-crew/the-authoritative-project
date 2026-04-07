@@ -55,3 +55,57 @@ export async function is_dc_user_id_capable_to_ban_groups(to_check: string): Pro
 
   return whitelist.privilege_level >= 4
 }
+
+interface RobloxIPInfo {
+  as: string,
+  country_code: string,
+  isp: string,
+  org: string,
+}
+
+async function helper_obtain_ip_info(ip: string): Promise<any> {
+  const response = await fetch(`https://ipinfo.io/${ip}/json`)
+    .then(res => res.json())
+    .catch(() => "No IP info found") ;
+
+
+  return response;
+}
+
+export async function is_ip_from_roblox(ip: string): Promise<boolean> {
+  const ip_info = await helper_obtain_ip_info(ip);
+
+  const COUNTRY_CODES: Array<string> = ["AU", "GB", "JP", "US", "DE", "SG", "FR",
+                 "CA", "NL", "SE", "BR", "KR", "IE", "IN",
+                 "IT", "ES", "RU", "ZA"]
+
+  const asn = ip_info?.as ?? "No ASN found";
+  const isp = ip_info?.isp ?? "No ISP found";
+  const country_code = ip_info?.country_code ?? "No country code found";
+  const org = ip_info?.org ?? "No org found";
+
+  if (isp != "Roblox" || !("roblox" in isp.toLowerCase())) {
+    return false;
+  }
+
+  if (org == "Roblox" || !("roblox" in org.toLowerCase())) {
+    return false;
+  }
+
+  if (!(country_code in COUNTRY_CODES)) {
+    return false;
+  }
+
+  if (
+    asn != "AS22697 Roblox"
+    || asn != "AS11281 Roblox"
+    || !("AS22697".toLowerCase() in asn.toLowerCase())
+    || !("AS11281".toLowerCase() in asn.toLowerCase())
+    || !("AS11281 Roblox".toLowerCase() in asn.toLowerCase())
+    || !("AS136766".toLowerCase() in asn.toLowerCase())
+  ) {
+    return false
+  }
+
+  return true
+}

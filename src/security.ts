@@ -71,11 +71,11 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
   if (
     (new Date().getTime() - await utc_string_to_unix_ms(
       decrypted_data_to_check.timestamp
-    )) >= 7500
+    )) >= 3500
   ) {
     logger.write(
       LogLevel.Info, `
-      Invalid API key (lasted for more than 7.5 seconds): ${encrypted_api_key}`,
+      Invalid API key (lasted for more than 3.5 seconds): ${encrypted_api_key}`,
       {
         lasted_for: new Date().getTime() - await utc_string_to_unix_ms(
           decrypted_data_to_check.timestamp
@@ -84,22 +84,6 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
     );
     return false;
   }
-
-  logger.write(
-    LogLevel.Info,
-    `Valid API key (lasted for less than 7.5 seconds): ${encrypted_api_key}`,
-    {
-      lasted_for: new Date().getTime() - await utc_string_to_unix_ms(
-        decrypted_data_to_check.timestamp
-      ),
-
-      generated_at_unix_timestamp: await utc_string_to_unix_ms(
-        decrypted_data_to_check.timestamp
-      ),
-
-      generated_at: decrypted_data_to_check.timestamp,
-    }
-  );
 
   const expected_signature = await sign(
     decrypted_data_to_check.timestamp

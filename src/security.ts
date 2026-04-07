@@ -69,6 +69,9 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
             logger.write(LogLevel.Info, "A valid API key was provided. API key: " + encrypted_api_key);
             return true;
           }
+        } else {
+          logger.write(LogLevel.Info, "The specified API key is not properly signatured");
+          return false;
         }
       }
     }

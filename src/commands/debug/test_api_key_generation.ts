@@ -53,7 +53,7 @@ export const command: Command = {
 
       const new_decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
       let encrypted_api_key_with_signature = new_decipher.update(decrypted_api_key_with_signature, "utf8", "hex");
-      encrypted_api_key_with_signature += new_decipher.final("utf8");
+      encrypted_api_key_with_signature += new_decipher.final("hex");
 
       signed_encrypted_api_key = Buffer.from(encrypted_api_key_with_signature).toString("base64");
     }

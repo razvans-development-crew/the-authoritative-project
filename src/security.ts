@@ -22,8 +22,6 @@ export async function get_all_valid_api_keys(): Promise<string[]> {
     encrypted += cipher.final("hex");
 
     api_keys.push(Buffer.from(encrypted).toString("base64"))
-
-    logger.write(LogLevel.Info, `Generated API key ${i + 1} (encrypted): ${api_keys[i]}`);
   }
 
   return api_keys; // array of encrypted API keys

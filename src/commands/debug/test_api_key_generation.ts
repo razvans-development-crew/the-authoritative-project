@@ -3,15 +3,16 @@ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { get_all_valid_api_keys, check_api_key, check_signature } from "../../security.ts";
+import { check_api_key } from "../../security.ts";
+import { encrypt, sign } from "../../crypto_helpers.ts";
 import crypto from "crypto";
 import { get_env_variable } from "../../env_variables.ts";
 
 const preconditions = require("../../preconditions.ts");
 
-const AES_ENCRYPTION_KEY = await get_env_variable("AES_ENCRYPTION_KEY");               // 256-bit (32-byte) key
-const AES_INITIALIZATION_VECTOR = await get_env_variable("AES_INITIALIZATION_VECTOR"); // 16-byte initialization vector
-const SIGNATURE_KEY = await get_env_variable("SIGNATURE_KEY");                         // 512-bit (64-byte) key
+const AES_ENCRYPTION_KEY = await get_env_variable("AES_ENCRYPTION_KEY");
+const SECRET_KEY = await get_env_variable("SECRET_KEY");
+const SIGNATURE_KEY = await get_env_variable("SIGNATURE_KEY");
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -27,46 +28,23 @@ export const command: Command = {
       return;
     }
 
-    logger.write(LogLevel.Info, "[TEST] API keys are being generated...");
-    const api_key = (await get_all_valid_api_keys())[7998];
-    logger.write(LogLevel.Info, `[TEST] Generated API key: ${api_key}`);
+    const key = Date.now() + ":" + SECRET_KEY;
+    const signature = await sign(key, SIGNATURE_KEY);
+    const signed_key = key + ":" + signature;
+    const encrypted_key = await encrypt(signed_key, AES_ENCRYPTION_KEY);
 
-    logger.write(LogLevel.Info, "[TEST] An API key is being checked...");
-    if (!api_key) {
-      await interaction.followUp({ content: '> Test failed: No API key generated.' });
-      logger.write(LogLevel.Info, "[TEST] No API key generated.");
+    logger.write(LogLevel.Info, `Generated API key: ${encrypted_key}`);
+
+    const result = await check_api_key(encrypted_key);
+
+    if (result === true) {
+      await interaction.followUp({ content: '> Test successful (API key verification): API key is valid' });
+      logger.write(LogLevel.Info, `Test successful (API key verification): API key is valid`);
       return;
     }
 
-    // sign the API key
-    let signed_encrypted_api_key;
-
-    {
-      const decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
-      let decrypted_api_key_to_check = decipher.update(Buffer.from(api_key, "base64").toString("utf8"), "hex", "utf8");
-      decrypted_api_key_to_check += decipher.final("utf8");
-
-      let decrypted_key_without_signature = decrypted_api_key_to_check.split(":")[0] + ":" + decrypted_api_key_to_check.split(":")[1];
-
-      const signature = crypto.createHash("sha256").update(decrypted_key_without_signature + ":" + SIGNATURE_KEY).digest("hex");
-      const decrypted_api_key_with_signature = decrypted_api_key_to_check + ":" + signature
-
-      const new_decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
-      let encrypted_api_key_with_signature = new_decipher.update(decrypted_api_key_with_signature, "utf8", "hex");
-      encrypted_api_key_with_signature += new_decipher.final("hex");
-
-      signed_encrypted_api_key = Buffer.from(encrypted_api_key_with_signature).toString("base64");
-    }
-
-    const is_api_key_valid = await check_api_key(signed_encrypted_api_key);
-
-    if (is_api_key_valid) {
-      await interaction.followUp({ content: '> Test successful: API key is valid.' });
-      logger.write(LogLevel.Info, "[TEST] API key is valid.");
-    } else {
-      await interaction.followUp({ content: '> Test failed: API key is invalid.' });
-      logger.write(LogLevel.Info, "[TEST] API key is invalid.");
-    }
+    await interaction.followUp({ content: '> Test failed (API key verification): API key is invalid' });
+    logger.write(LogLevel.Info, `Test failed (API key verification): API key is invalid`);
   }
 }
 

@@ -44,1077 +44,733 @@ local function safeLoadstring(code, chunkName)
 end
 
 local AES = safeLoadstring([==[
-=========================================================================================]=]--
--->> TODO: Suggest features at [devforum.roblox.com/t/2009120]
+--[=[
+	Cryptography library: AES
 
-----------------------------------------------------------------------------------------------
---  GLOBALS' LOCALIZATION for VM performance and secure environment
-----------------------------------------------------------------------------------------------
+	Sizes:
+		Init Vector: 16 bytes
+		Key Size: 16 / 24 / 32 bytes
 
-local error = error
-local newproxy = newproxy
-local getmetatable = getmetatable
-local typeof = typeof
+	Example usage:
+	local Key = CSPRNG.RandomBytes(32)
+	local IV = CSPRNG.RandomBytes(12)
 
+	local Message = "This is a secret message"
+	local Plaintext = buffer.fromstring(Message)
 
-local bit32_bxor = bit32.bxor
-local bit32_rrotate = bit32.rrotate
+	local AAD = buffer.fromstring("user:john,timestamp:456745683")
+	local Ciphertext, Tag = AES.Encrypt(Plaintext, Key, IV, AAD)
+--]=]
 
+type Processor = (PlaintextBlock: buffer, PlaintextOffset: number, OutputBuffer: buffer, OutputOffset: number) -> ()
 
-local buffer_copy = 		buffer.copy
-local buffer_create = 		buffer.create
-local buffer_fromstring = 	buffer.fromstring
-local buffer_len = 			buffer.len
-local buffer_readu8 = 		buffer.readu8
-local buffer_readu16 = 		buffer.readu16
-local buffer_readu32 = 		buffer.readu32
-local buffer_tostring = 	buffer.tostring
-local buffer_writestring = 	buffer.writestring
-local buffer_writeu8 = 		buffer.writeu8
-local buffer_writeu16 = 	buffer.writeu16
-local buffer_writeu32 = 	buffer.writeu32
+local AES = {}
 
+local SBOX_16BIT = buffer.create(131072)
+local SMIX_TABLE0 = buffer.create(65536)
+local SMIX_TABLE1 = buffer.create(65536)
 
-local math_floor = math.floor
+local ALL_TABLES = buffer.create(32 * 16 * 16)
+local DOUBLES = buffer.create(128 * 16)
 
+local INVS_XOR_TABLE = buffer.create(65536)
+local INVMIX_TABLE0 = buffer.create(65536)
+local INVMIX_TABLE1 = buffer.create(65536)
 
-local string_sub = string.sub
+local KEY_CONFIGS = {
+	[16] = {ExpandedLength = 176, MaterialLength = 128},
+	[24] = {ExpandedLength = 208, MaterialLength = 160},
+	[32] = {ExpandedLength = 240, MaterialLength = 192}
+}
 
-
-
-
-local S_BOX_16 = 	buffer_create(131072)
-local S_MIX0 = 		buffer_create(65536)
-local S_MIX1 = 		buffer_create(65536)
-local INV_S_XOR = 	buffer_create(65536)
-local INV_MIX0 = 	buffer_create(65536)
-local INV_MIX1 = 	buffer_create(65536)
-
-
-
-
-
-local function keySchedule(key: buffer | string, len: number, out: buffer, raw: boolean): buffer
-	if raw then
-		buffer_copy(out, 0, key :: buffer, 0, len)
-	else
-		buffer_writestring(out, 0, key :: string, len)
-	end
-	local word = bit32_rrotate(buffer_readu32(out, len - 4), 8)
-	local rc = 0.5
-
-	if len == 32 then
-		for offs = 32, 192, 32 do
-			rc = rc * 2 % 229
-			word = bit32_bxor(buffer_readu32(out, offs - 32), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-				buffer_readu16(S_BOX_16, word % 65536 * 2), rc)
-			buffer_writeu32(out, offs, word)
-
-			word = bit32_bxor(buffer_readu32(out, offs - 28), word)
-			buffer_writeu32(out, offs + 4, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 24), word)
-			buffer_writeu32(out, offs + 8, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 20), word)
-			buffer_writeu32(out, offs + 12, word)
-
-			word = bit32_bxor(buffer_readu32(out, offs - 16), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-				buffer_readu16(S_BOX_16, word % 65536 * 2))
-			buffer_writeu32(out, offs + 16, word)
-
-			word = bit32_bxor(buffer_readu32(out, offs - 12), word)
-			buffer_writeu32(out, offs + 20, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 8), word)
-			buffer_writeu32(out, offs + 24, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 4), word)
-			buffer_writeu32(out, offs + 28, word)
-			word = bit32_rrotate(word, 8)
-		end
-		word = bit32_bxor(buffer_readu32(out, 192), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-			buffer_readu16(S_BOX_16, word % 65536 * 2), 64)
-		buffer_writeu32(out, 224, word)
-
-		word = bit32_bxor(buffer_readu32(out, 196), word)
-		buffer_writeu32(out, 228, word)
-		word = bit32_bxor(buffer_readu32(out, 200), word)
-		buffer_writeu32(out, 232, word)
-		buffer_writeu32(out, 236, bit32_bxor(buffer_readu32(out, 204), word))
-	elseif len == 24 then
-		for offs = 24, 168, 24 do
-			rc = rc * 2 % 229
-			word = bit32_bxor(buffer_readu32(out, offs - 24), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-				buffer_readu16(S_BOX_16, word % 65536 * 2), rc)
-			buffer_writeu32(out, offs, word)
-
-			word = bit32_bxor(buffer_readu32(out, offs - 20), word)
-			buffer_writeu32(out, offs + 4, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 16), word)
-			buffer_writeu32(out, offs + 8, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 12), word)
-			buffer_writeu32(out, offs + 12, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 8), word)
-			buffer_writeu32(out, offs + 16, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 4), word)
-			buffer_writeu32(out, offs + 20, word)
-			word = bit32_rrotate(word, 8)
-		end
-		word = bit32_bxor(buffer_readu32(out, 168), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-			buffer_readu16(S_BOX_16, word % 65536 * 2), 128)
-		buffer_writeu32(out, 192, word)
-
-		word = bit32_bxor(buffer_readu32(out, 172), word)
-		buffer_writeu32(out, 196, word)
-		word = bit32_bxor(buffer_readu32(out, 176), word)
-		buffer_writeu32(out, 200, word)
-		buffer_writeu32(out, 204, bit32_bxor(buffer_readu32(out, 180), word))
-	else
-		for offs = 16, 144, 16 do
-			rc = rc * 2 % 229
-			word = bit32_bxor(buffer_readu32(out, offs - 16), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-				buffer_readu16(S_BOX_16, word % 65536 * 2), rc)
-			buffer_writeu32(out, offs, word)
-
-			word = bit32_bxor(buffer_readu32(out, offs - 12), word)
-			buffer_writeu32(out, offs + 4, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 8), word)
-			buffer_writeu32(out, offs + 8, word)
-			word = bit32_bxor(buffer_readu32(out, offs - 4), word)
-			buffer_writeu32(out, offs + 12, word)
-			word = bit32_rrotate(word, 8)
-		end
-		word = bit32_bxor(buffer_readu32(out, 144), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
-			buffer_readu16(S_BOX_16, word % 65536 * 2), 54)
-		buffer_writeu32(out, 160, word)
-
-		word = bit32_bxor(buffer_readu32(out, 148), word)
-		buffer_writeu32(out, 164, word)
-		word = bit32_bxor(buffer_readu32(out, 152), word)
-		buffer_writeu32(out, 168, word)
-		buffer_writeu32(out, 172, bit32_bxor(buffer_readu32(out, 156), word))
-	end
-	return out
-end
-
-
-local function encryptBlock(keym: buffer, lenm: number, text: buffer, offs: number, out: buffer, offt: number): ()
-	local b0 = 	bit32_bxor(buffer_readu8(text, offs), buffer_readu8(keym, 0))
-	local b1 = 	bit32_bxor(buffer_readu8(text, offs + 1), buffer_readu8(keym, 1))
-	local b2 = 	bit32_bxor(buffer_readu8(text, offs + 2), buffer_readu8(keym, 2))
-	local b3 =	bit32_bxor(buffer_readu8(text, offs + 3), buffer_readu8(keym, 3))
-	local b4 =	bit32_bxor(buffer_readu8(text, offs + 4), buffer_readu8(keym, 4))
-	local b5 =	bit32_bxor(buffer_readu8(text, offs + 5), buffer_readu8(keym, 5))
-	local b6 =	bit32_bxor(buffer_readu8(text, offs + 6), buffer_readu8(keym, 6))
-	local b7 =	bit32_bxor(buffer_readu8(text, offs + 7), buffer_readu8(keym, 7))
-	local b8 =	bit32_bxor(buffer_readu8(text, offs + 8), buffer_readu8(keym, 8))
-	local b9 =	bit32_bxor(buffer_readu8(text, offs + 9), buffer_readu8(keym, 9))
-	local b10 =	bit32_bxor(buffer_readu8(text, offs + 10), buffer_readu8(keym, 10))
-	local b11 = bit32_bxor(buffer_readu8(text, offs + 11), buffer_readu8(keym, 11))
-	local b12 = bit32_bxor(buffer_readu8(text, offs + 12), buffer_readu8(keym, 12))
-	local b13 = bit32_bxor(buffer_readu8(text, offs + 13), buffer_readu8(keym, 13))
-	local b14 = bit32_bxor(buffer_readu8(text, offs + 14), buffer_readu8(keym, 14))
-	local b15 = bit32_bxor(buffer_readu8(text, offs + 15), buffer_readu8(keym, 15))
-
-	local i0 = b0 * 256 + b5; 	local i1 = b5 * 256 + b10;	local i2 = b10 * 256 + b15; local i3 = b15 * 256 + b0
-	local i4 = b4 * 256 + b9; 	local i5 = b9 * 256 + b14;	local i6 = b14 * 256 + b3; 	local i7 = b3 * 256 + b4
-	local i8 = b8 * 256 + b13; 	local i9 = b13 * 256 + b2;	local i10 = b2 * 256 + b7; 	local i11 = b7 * 256 + b8
-	local i12 = b12 * 256 + b1; local i13 = b1 * 256 + b6;	local i14 = b6 * 256 + b11; local i15 = b11 * 256 + b12
-
-	for offs = 16, lenm, 16 do
-
-		b0 =	bit32_bxor(buffer_readu8(S_MIX0, i0), buffer_readu8(S_MIX1, i2), buffer_readu8(keym, offs))
-		b1 =	bit32_bxor(buffer_readu8(S_MIX0, i1), buffer_readu8(S_MIX1, i3), buffer_readu8(keym, offs + 1))
-		b2 =	bit32_bxor(buffer_readu8(S_MIX0, i2), buffer_readu8(S_MIX1, i0), buffer_readu8(keym, offs + 2))
-		b3 =	bit32_bxor(buffer_readu8(S_MIX0, i3), buffer_readu8(S_MIX1, i1), buffer_readu8(keym, offs + 3))
-		b4 =	bit32_bxor(buffer_readu8(S_MIX0, i4), buffer_readu8(S_MIX1, i6), buffer_readu8(keym, offs + 4))
-		b5 =	bit32_bxor(buffer_readu8(S_MIX0, i5), buffer_readu8(S_MIX1, i7), buffer_readu8(keym, offs + 5))
-		b6 =	bit32_bxor(buffer_readu8(S_MIX0, i6), buffer_readu8(S_MIX1, i4), buffer_readu8(keym, offs + 6))
-		b7 =	bit32_bxor(buffer_readu8(S_MIX0, i7), buffer_readu8(S_MIX1, i5), buffer_readu8(keym, offs + 7))
-		b8 =	bit32_bxor(buffer_readu8(S_MIX0, i8), buffer_readu8(S_MIX1, i10), buffer_readu8(keym, offs + 8))
-		b9 =	bit32_bxor(buffer_readu8(S_MIX0, i9), buffer_readu8(S_MIX1, i11), buffer_readu8(keym, offs + 9))
-		b10 =	bit32_bxor(buffer_readu8(S_MIX0, i10), buffer_readu8(S_MIX1, i8), buffer_readu8(keym, offs + 10))
-		b11 =	bit32_bxor(buffer_readu8(S_MIX0, i11), buffer_readu8(S_MIX1, i9), buffer_readu8(keym, offs + 11))
-		b12 =	bit32_bxor(buffer_readu8(S_MIX0, i12), buffer_readu8(S_MIX1, i14), buffer_readu8(keym, offs + 12))
-		b13 =	bit32_bxor(buffer_readu8(S_MIX0, i13), buffer_readu8(S_MIX1, i15), buffer_readu8(keym, offs + 13))
-		b14 =	bit32_bxor(buffer_readu8(S_MIX0, i14), buffer_readu8(S_MIX1, i12), buffer_readu8(keym, offs + 14))
-		b15 =	bit32_bxor(buffer_readu8(S_MIX0, i15), buffer_readu8(S_MIX1, i13), buffer_readu8(keym, offs + 15))
-
-		i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15 = b0 * 256 + b5, b5 * 256 + b10, b10 * 256 + b15, b15 * 256 + b0, b4 * 256 + b9, b9 * 256 + b14, b14 * 256 + b3, b3 * 256 + b4, b8 * 256 + b13, b13 * 256 + b2, b2 * 256 + b7, b7 * 256 + b8, b12 * 256 + b1, b1 * 256 + b6, b6 * 256 + b11, b11 * 256 + b12
-	end
-
-	buffer_writeu32(out, offt, bit32_bxor(buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i15), buffer_readu8(S_MIX1, i13),
-		buffer_readu8(keym, lenm + 31)) * 512 + bit32_bxor(buffer_readu8(S_MIX0, i10), buffer_readu8(S_MIX1, i8), buffer_readu8(keym, lenm + 26)) * 2)
-			* 65536 + buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i5), buffer_readu8(S_MIX1, i7), buffer_readu8(keym, lenm + 21)) * 512 +
-				bit32_bxor(buffer_readu8(S_MIX0, i0), buffer_readu8(S_MIX1, i2), buffer_readu8(keym, lenm + 16)) * 2), buffer_readu32(keym, lenm + 32)))
-	buffer_writeu32(out, offt + 4, bit32_bxor(buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i3), buffer_readu8(S_MIX1, i1),
-		buffer_readu8(keym, lenm + 19)) * 512 + bit32_bxor(buffer_readu8(S_MIX0, i14), buffer_readu8(S_MIX1, i12), buffer_readu8(keym, lenm + 30)) * 2)
-			* 65536 + buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i9), buffer_readu8(S_MIX1, i11), buffer_readu8(keym, lenm + 25)) * 512 +
-				bit32_bxor(buffer_readu8(S_MIX0, i4), buffer_readu8(S_MIX1, i6), buffer_readu8(keym, lenm + 20)) * 2), buffer_readu32(keym, lenm + 36)))
-	buffer_writeu32(out, offt + 8, bit32_bxor(buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i7), buffer_readu8(S_MIX1, i5),
-		buffer_readu8(keym, lenm + 23)) * 512 + bit32_bxor(buffer_readu8(S_MIX0, i2), buffer_readu8(S_MIX1, i0), buffer_readu8(keym, lenm + 18)) * 2)
-			* 65536 + buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i13), buffer_readu8(S_MIX1, i15), buffer_readu8(keym, lenm + 29)) * 512 +
-				bit32_bxor(buffer_readu8(S_MIX0, i8), buffer_readu8(S_MIX1, i10), buffer_readu8(keym, lenm + 24)) * 2), buffer_readu32(keym, lenm + 40)))
-	buffer_writeu32(out, offt + 12, bit32_bxor(buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i11), buffer_readu8(S_MIX1, i9),
-		buffer_readu8(keym, lenm + 27)) * 512 + bit32_bxor(buffer_readu8(S_MIX0, i6), buffer_readu8(S_MIX1, i4), buffer_readu8(keym, lenm + 22)) * 2)
-			* 65536 + buffer_readu16(S_BOX_16, bit32_bxor(buffer_readu8(S_MIX0, i1), buffer_readu8(S_MIX1, i3), buffer_readu8(keym, lenm + 17)) * 512 +
-				bit32_bxor(buffer_readu8(S_MIX0, i12), buffer_readu8(S_MIX1, i14), buffer_readu8(keym, lenm + 28)) * 2), buffer_readu32(keym, lenm + 44)))
-end
-
-local function decryptBlock(keym: buffer, lenm: number, ciph: buffer, offs: number, out: buffer, offt: number): ()
-	local b0 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs) * 256 + buffer_readu8(keym, lenm + 32)), buffer_readu8(keym, lenm + 16))
-	local b1 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 13) * 256 + buffer_readu8(keym, lenm + 45)), buffer_readu8(keym, lenm + 17))
-	local b2 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 10) * 256 + buffer_readu8(keym, lenm + 42)), buffer_readu8(keym, lenm + 18))
-	local b3 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 7) * 256 + buffer_readu8(keym, lenm + 39)), buffer_readu8(keym, lenm + 19))
-	local b4 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 4) * 256 + buffer_readu8(keym, lenm + 36)), buffer_readu8(keym, lenm + 20))
-	local b5 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 1) * 256 + buffer_readu8(keym, lenm + 33)), buffer_readu8(keym, lenm + 21))
-	local b6 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 14) * 256 + buffer_readu8(keym, lenm + 46)), buffer_readu8(keym, lenm + 22))
-	local b7 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 11) * 256 + buffer_readu8(keym, lenm + 43)), buffer_readu8(keym, lenm + 23))
-	local b8 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 8) * 256 + buffer_readu8(keym, lenm + 40)), buffer_readu8(keym, lenm + 24))
-	local b9 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 5) * 256 + buffer_readu8(keym, lenm + 37)), buffer_readu8(keym, lenm + 25))
-	local b10 = bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 2) * 256 + buffer_readu8(keym, lenm + 34)), buffer_readu8(keym, lenm + 26))
-	local b11 = bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 15) * 256 + buffer_readu8(keym, lenm + 47)), buffer_readu8(keym, lenm + 27))
-	local b12 = bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 12) * 256 + buffer_readu8(keym, lenm + 44)), buffer_readu8(keym, lenm + 28))
-	local b13 = bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 9) * 256 + buffer_readu8(keym, lenm + 41)), buffer_readu8(keym, lenm + 29))
-	local b14 = bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 6) * 256 + buffer_readu8(keym, lenm + 38)), buffer_readu8(keym, lenm + 30))
-	local b15 = bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(ciph, offs + 3) * 256 + buffer_readu8(keym, lenm + 35)), buffer_readu8(keym, lenm + 31))
-
-	local i0 = b0 * 256 + b1; 	local i1 = b1 * 256 + b2;	local i2 = b2 * 256 + b3; 	local i3 = b3 * 256 + b0
-	local i4 = b4 * 256 + b5; 	local i5 = b5 * 256 + b6; 	local i6 = b6 * 256 + b7; 	local i7 = b7 * 256 + b4
-	local i8 = b8 * 256 + b9; 	local i9 = b9 * 256 + b10; 	local i10 = b10 * 256 + b11;local i11 = b11 * 256 + b8
-	local i12 = b12 * 256 + b13;local i13 = b13 * 256 + b14;local i14 = b14 * 256 + b15;local i15 = b15 * 256 + b12
-
-	for offs = lenm, 16, - 16 do
-
-		b0 = 	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i0) * 256 + buffer_readu8(INV_MIX1, i2)), buffer_readu8(keym, offs))
-		b1 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i13) * 256 + buffer_readu8(INV_MIX1, i15)), buffer_readu8(keym, offs + 1))
-		b2 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i10) * 256 + buffer_readu8(INV_MIX1, i8)), buffer_readu8(keym, offs + 2))
-		b3 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i7) * 256 + buffer_readu8(INV_MIX1, i5)), buffer_readu8(keym, offs + 3))
-		b4 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i4) * 256 + buffer_readu8(INV_MIX1, i6)), buffer_readu8(keym, offs + 4))
-		b5 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i1) * 256 + buffer_readu8(INV_MIX1, i3)), buffer_readu8(keym, offs + 5))
-		b6 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i14) * 256 + buffer_readu8(INV_MIX1, i12)), buffer_readu8(keym, offs + 6))
-		b7 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i11) * 256 + buffer_readu8(INV_MIX1, i9)), buffer_readu8(keym, offs + 7))
-		b8 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i8) * 256 + buffer_readu8(INV_MIX1, i10)), buffer_readu8(keym, offs + 8))
-		b9 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i5) * 256 + buffer_readu8(INV_MIX1, i7)), buffer_readu8(keym, offs + 9))
-		b10 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i2) * 256 + buffer_readu8(INV_MIX1, i0)), buffer_readu8(keym, offs + 10))
-		b11 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i15) * 256 + buffer_readu8(INV_MIX1, i13)), buffer_readu8(keym, offs + 11))
-		b12 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i12) * 256 + buffer_readu8(INV_MIX1, i14)), buffer_readu8(keym, offs + 12))
-		b13 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i9) * 256 + buffer_readu8(INV_MIX1, i11)), buffer_readu8(keym, offs + 13))
-		b14 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i6) * 256 + buffer_readu8(INV_MIX1, i4)), buffer_readu8(keym, offs + 14))
-		b15 =	bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i3) * 256 + buffer_readu8(INV_MIX1, i1)), buffer_readu8(keym, offs + 15))
-
-		i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15 = b0 * 256 + b1, b1 * 256 + b2, b2 * 256 + b3, b3 * 256 + b0, b4 * 256 + b5, b5 * 256 + b6, b6 * 256 + b7, b7 * 256 + b4, b8 * 256 + b9, b9 * 256 + b10, b10 * 256 + b11, b11 * 256 + b8, b12 * 256 + b13, b13 * 256 + b14, b14 * 256 + b15, b15 * 256 + b12
-	end
-
-	buffer_writeu32(out, offt, bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i7) * 256 + buffer_readu8(INV_MIX1, i5)),
-		buffer_readu8(keym, 3)) * 16777216 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i10) * 256 + buffer_readu8(INV_MIX1, i8)),
-		buffer_readu8(keym, 2)) * 65536 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i13) * 256 + buffer_readu8(INV_MIX1, i15)),
-		buffer_readu8(keym, 1)) * 256 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i0) * 256 + buffer_readu8(INV_MIX1, i2)),
-		buffer_readu8(keym, 0)))
-	buffer_writeu32(out, offt + 4, bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i11) * 256 + buffer_readu8(INV_MIX1, i9)),
-		buffer_readu8(keym, 7)) * 16777216 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i14) * 256 + buffer_readu8(INV_MIX1, i12)),
-		buffer_readu8(keym, 6)) * 65536 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i1) * 256 + buffer_readu8(INV_MIX1, i3)),
-		buffer_readu8(keym, 5)) * 256 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i4) * 256 + buffer_readu8(INV_MIX1, i6)),
-		buffer_readu8(keym, 4)))
-	buffer_writeu32(out, offt + 8, bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i15) * 256 + buffer_readu8(INV_MIX1, i13)),
-		buffer_readu8(keym, 11)) * 16777216 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i2) * 256 + buffer_readu8(INV_MIX1, i0)),
-		buffer_readu8(keym, 10)) * 65536 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i5) * 256 + buffer_readu8(INV_MIX1, i7)),
-		buffer_readu8(keym, 9)) * 256 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i8) * 256 + buffer_readu8(INV_MIX1, i10)),
-		buffer_readu8(keym, 8)))
-	buffer_writeu32(out, offt + 12, bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i3) * 256 + buffer_readu8(INV_MIX1, i1)),
-		buffer_readu8(keym, 15)) * 16777216 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i6) * 256 + buffer_readu8(INV_MIX1, i4)),
-		buffer_readu8(keym, 14)) * 65536 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i9) * 256 + buffer_readu8(INV_MIX1, i11)),
-		buffer_readu8(keym, 13)) * 256 + bit32_bxor(buffer_readu8(INV_S_XOR, buffer_readu8(INV_MIX0, i12) * 256 + buffer_readu8(INV_MIX1, i14)),
-		buffer_readu8(keym, 12)))
-end
-
-do
-	local S_BOX = 		buffer_create(256)
-	local INV_S_BOX = 	buffer_create(256)
-
-	local MUL3 = buffer_create(256)
-	local MUL9 = buffer_create(256)
-	local MUL11 = buffer_create(256)
-	local p = 1; local q = 1; local t
-
-	local function gfmul(a: number, b: number): number
-		local p = 0
-
+local SUBSTITUTION_BOX, INVERSE_SUBSTITUTION_BOX = buffer.create(256), buffer.create(256) do
+	local GaloisMultiply3, GaloisMultiply9, GaloisMultiply11 = buffer.create(256), buffer.create(256), buffer.create(256)
+	local function GaloisFieldMultiply(FirstValue: number, SecondValue: number): number
+		local Product = 0
 		for _ = 0, 7 do
-			if b % 2 == 1 then
-				p = bit32_bxor(p, a)
+			if SecondValue % 2 == 1 then
+				Product = bit32.bxor(Product, FirstValue)
 			end
-
-			if a >= 128 then
-				a = bit32_bxor(a * 2 % 256, 27)
-			else
-				a = a * 2 % 256
-			end
-			b = math_floor(b / 2)
+			FirstValue = FirstValue >= 128 and bit32.bxor(FirstValue * 2 % 256, 27) or FirstValue * 2 % 256
+			SecondValue = math.floor(SecondValue / 2)
 		end
-		return p
+
+		return Product
 	end
 
-	buffer_writeu8(S_BOX, 0, 99)
+	local PolynomialP = 1
+	local PolynomialQ = 1
+	buffer.writeu8(SUBSTITUTION_BOX, 0, 99)
+
 	for _ = 1, 255 do
-		p = bit32_bxor(p, p * 2, if p < 128 then 0 else 27) % 256
-		q = bit32_bxor(q, q * 2)
-		q = bit32_bxor(q, q * 4)
-		q = bit32_bxor(q, q * 16) % 256
-		if q >= 128 then
-			q = bit32_bxor(q, 9)
+		PolynomialP = bit32.bxor(PolynomialP, PolynomialP * 2, PolynomialP < 128 and 0 or 27) % 256
+		PolynomialQ = bit32.bxor(PolynomialQ, PolynomialQ * 2)
+		PolynomialQ = bit32.bxor(PolynomialQ, PolynomialQ * 4)
+		PolynomialQ = bit32.bxor(PolynomialQ, PolynomialQ * 16) % 256
+		if PolynomialQ >= 128 then
+			PolynomialQ = bit32.bxor(PolynomialQ, 9)
 		end
 
-		t = bit32_bxor(q, q % 128 * 2 + q / 128, q % 64 * 4 + q / 64, q % 32 * 8 + q / 32, q % 16 * 16 + q / 16, 99)
-		buffer_writeu8(S_BOX, p, t)
-		buffer_writeu8(INV_S_BOX, t, p)
-
-		buffer_writeu8(MUL3, p, gfmul(3, p))
-		buffer_writeu8(MUL9, p, gfmul(9, p))
-		buffer_writeu8(MUL11, p, gfmul(11, p))
+		local TempValue = bit32.bxor(
+			PolynomialQ,
+			PolynomialQ % 128 * 2 + PolynomialQ / 128,
+			PolynomialQ % 64 * 4 + PolynomialQ / 64,
+			PolynomialQ % 32 * 8 + PolynomialQ / 32,
+			PolynomialQ % 16 * 16 + PolynomialQ / 16,
+			99
+		)
+		buffer.writeu8(SUBSTITUTION_BOX, PolynomialP, TempValue)
+		buffer.writeu8(INVERSE_SUBSTITUTION_BOX, TempValue, PolynomialP)
+		buffer.writeu8(GaloisMultiply3, PolynomialP, GaloisFieldMultiply(3, PolynomialP))
+		buffer.writeu8(GaloisMultiply9, PolynomialP, GaloisFieldMultiply(9, PolynomialP))
+		buffer.writeu8(GaloisMultiply11, PolynomialP, GaloisFieldMultiply(11, PolynomialP))
 	end
 
+	local TableIndex = 0
+	for OuterIndex = 0, 255 do
+		local PolynomialPOuter = buffer.readu8(SUBSTITUTION_BOX, OuterIndex)
+		local PolynomialPBytes = PolynomialPOuter * 256
+		local Galois2 = GaloisFieldMultiply(2, PolynomialPOuter)
+		local Galois13 = GaloisFieldMultiply(13, OuterIndex)
+		local Galois14 = GaloisFieldMultiply(14, OuterIndex)
 
-	local pb, g2, g14, g13; t = 0
-	for i = 0, 255 do
-		p = buffer_readu8(S_BOX, i); pb = p * 256
-		g2, g13, g14 = gfmul(2, p), gfmul(13, i), gfmul(14, i)
-		for j = 0, 255 do
-			q = buffer_readu8(S_BOX, j)
-			buffer_writeu16(S_BOX_16, t * 2, pb + q)
-			buffer_writeu8(INV_S_XOR, t, buffer_readu8(INV_S_BOX, bit32_bxor(i, j)))
-			buffer_writeu8(S_MIX0, t, bit32_bxor(g2, buffer_readu8(MUL3, q)))
-			buffer_writeu8(S_MIX1, t, bit32_bxor(p, q))
-			buffer_writeu8(INV_MIX0, t, bit32_bxor(g14, buffer_readu8(MUL11, j)))
-			buffer_writeu8(INV_MIX1, t, bit32_bxor(g13, buffer_readu8(MUL9, j)))
-			t += 1
+		for InnerIndex = 0, 255 do
+			local PolynomialQInner = buffer.readu8(SUBSTITUTION_BOX, InnerIndex)
+
+			buffer.writeu16(SBOX_16BIT, TableIndex * 2, PolynomialPBytes + PolynomialQInner)
+			buffer.writeu8(INVS_XOR_TABLE, TableIndex, buffer.readu8(INVERSE_SUBSTITUTION_BOX, bit32.bxor(OuterIndex, InnerIndex)))
+			buffer.writeu8(SMIX_TABLE0, TableIndex, bit32.bxor(Galois2, buffer.readu8(GaloisMultiply3, PolynomialQInner)))
+			buffer.writeu8(SMIX_TABLE1, TableIndex, bit32.bxor(PolynomialPOuter, PolynomialQInner))
+			buffer.writeu8(INVMIX_TABLE0, TableIndex, bit32.bxor(Galois14, buffer.readu8(GaloisMultiply11, InnerIndex)))
+			buffer.writeu8(INVMIX_TABLE1, TableIndex, bit32.bxor(Galois13, buffer.readu8(GaloisMultiply9, InnerIndex)))
+			TableIndex += 1
 		end
 	end
 end
 
-export type AesCipher = typeof(setmetatable({} :: {
-	Key: string, Length: number, Mode: {FwdMode: ((input: buffer, offset: number, output: buffer, offsetOut: number) -> (),
-		(input: buffer, offset: number, output: buffer, offsetOut: number) -> (), buffer, buffer, {any},...any) -> (),
-		InvMode: ((input: buffer, offset: number, output: buffer, offsetOut: number) -> (),
-			(input: buffer, offset: number, output: buffer, offsetOut: number) -> (), buffer, buffer, {any},...any) -> ()},
-	Padding: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: boolean?}, RoundKeys: string,
-	Encrypt: (self: AesCipher, plaintext: buffer | string, output: buffer?,...any) -> buffer,
-	Decrypt: (self: AesCipher, ciphertext: buffer | string, output: buffer?,...any) -> buffer,
-	EncryptBlock: (self: AesCipher, plaintext: buffer, offset: number, output: buffer?, offsetOut: number?) -> (),
-	DecryptBlock: (self: AesCipher, ciphertext: buffer, offset: number, output: buffer?, offsetOut: number?) -> (),
-	Destroy: (self: AesCipher) -> ()
-}, {}))
-local function newidx(_, idx)
-	return error(`{idx} cannot be assigned to`)
-end
-local function tostr()
-	return "AesCipher"
-end
+local function ExpandKeySchedule(Key: buffer, KeyLength: number, OutputBuffer: buffer): buffer
+	buffer.copy(OutputBuffer, 0, Key, 0, KeyLength)
 
-local modes = (function()
-	local assert = assert
-	local bit32_bxor = bit32.bxor
-	local buffer_copy = 		buffer.copy
-	local buffer_create = 		buffer.create
-	local buffer_len = 			buffer.len
-	local buffer_readu8 = 		buffer.readu8
-	local buffer_readu32 =		buffer.readu32
-	local buffer_tostring = 	buffer.tostring
-	local buffer_writestring = 	buffer.writestring
-	local buffer_writeu8 = 		buffer.writeu8
-	local buffer_writeu32 = 	buffer.writeu32
+	local Word = bit32.rrotate(buffer.readu32(OutputBuffer, KeyLength - 4), 8)
+	local RoundConstant = 0.5
+	local SBox_16 = SBOX_16BIT
 
-	local math_floor = math.floor
-	local math_random = math.random
-	local table_freeze = table.freeze
-	local string_pack = string.pack
+	if KeyLength == 32 then
+		for KeyOffset = 32, 192, 32 do
+			RoundConstant = RoundConstant * 2 % 229
+			local SBoxLookup = buffer.readu16(SBox_16, Word // 65536 * 2) * 65536 + buffer.readu16(SBox_16, Word % 65536 * 2)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 32), SBoxLookup, RoundConstant)
+			buffer.writeu32(OutputBuffer, KeyOffset, Word)
 
+			local W1 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 28), Word)
+			buffer.writeu32(OutputBuffer, KeyOffset + 4, W1)
+			local W2 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 24), W1)
+			buffer.writeu32(OutputBuffer, KeyOffset + 8, W2)
+			local W3 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 20), W2)
+			buffer.writeu32(OutputBuffer, KeyOffset + 12, W3)
 
-	local ZEROES = buffer_create(16)
+			SBoxLookup = buffer.readu16(SBox_16, W3 // 65536 * 2) * 65536 + buffer.readu16(SBox_16, W3 % 65536 * 2)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 16), SBoxLookup)
+			buffer.writeu32(OutputBuffer, KeyOffset + 16, Word)
 
-	local function addByteCtr(ctr: buffer, step: number, offs0: number, offs1: number, le: boolean): ()
-		local byte
-		if le then
-			byte = buffer_readu8(ctr, offs0) + step
-			buffer_writeu8(ctr, offs0, byte)
-			if byte >= 256 then
-				for offs = offs0 + 1, offs1 do
-					byte = buffer_readu8(ctr, offs) + 1
-					buffer_writeu8(ctr, offs, byte)
-					if byte < 256 then
-						break
-					end
-				end
-			end
-		else
-			byte = buffer_readu8(ctr, offs1) + step
-			buffer_writeu8(ctr, offs1, byte)
-			if byte >= 256 then
-				for offs = offs1 - 1, offs0, - 1 do
-					byte = buffer_readu8(ctr, offs) + 1
-					buffer_writeu8(ctr, offs, byte)
-					if byte < 256 then
-						break
-					end
-				end
-			end
+			W1 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 12), Word)
+			buffer.writeu32(OutputBuffer, KeyOffset + 20, W1)
+			W2 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 8), W1)
+			buffer.writeu32(OutputBuffer, KeyOffset + 24, W2)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 4), W2)
+			buffer.writeu32(OutputBuffer, KeyOffset + 28, Word)
+			Word = bit32.rrotate(Word, 8)
 		end
-	end
 
-	local modes = {}
+		local SBoxLookup = buffer.readu16(SBox_16, Word // 65536 * 2) * 65536 + buffer.readu16(SBox_16, Word % 65536 * 2)
+		Word = bit32.bxor(buffer.readu32(OutputBuffer, 192), SBoxLookup, 64)
+		buffer.writeu32(OutputBuffer, 224, Word)
 
-	modes.ECB = table_freeze({
-		FwdMode = function(encp, _, text, out)
-			local len = buffer_len(text) - 16
-			assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-			for offs = 0, len, 16 do
-				encp(text, offs, out, offs)
-			end
-		end,
-		InvMode = function(_, decp, ciph, out)
-			local len = buffer_len(ciph) - 16
-			assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-			for offs = 0, len, 16 do
-				decp(ciph, offs, out, offs)
-			end
+		local W1 = bit32.bxor(buffer.readu32(OutputBuffer, 196), Word)
+		buffer.writeu32(OutputBuffer, 228, W1)
+		local W2 = bit32.bxor(buffer.readu32(OutputBuffer, 200), W1)
+		buffer.writeu32(OutputBuffer, 232, W2)
+		buffer.writeu32(OutputBuffer, 236, bit32.bxor(buffer.readu32(OutputBuffer, 204), W2))
+
+	elseif KeyLength == 24 then
+		for KeyOffset = 24, 168, 24 do
+			RoundConstant = RoundConstant * 2 % 229
+			local SBoxLookup = buffer.readu16(SBox_16, Word // 65536 * 2) * 65536 + buffer.readu16(SBox_16, Word % 65536 * 2)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 24), SBoxLookup, RoundConstant)
+			buffer.writeu32(OutputBuffer, KeyOffset, Word)
+
+			local W1 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 20), Word)
+			buffer.writeu32(OutputBuffer, KeyOffset + 4, W1)
+			local W2 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 16), W1)
+			buffer.writeu32(OutputBuffer, KeyOffset + 8, W2)
+			local W3 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 12), W2)
+			buffer.writeu32(OutputBuffer, KeyOffset + 12, W3)
+			local W4 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 8), W3)
+			buffer.writeu32(OutputBuffer, KeyOffset + 16, W4)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 4), W4)
+			buffer.writeu32(OutputBuffer, KeyOffset + 20, Word)
+			Word = bit32.rrotate(Word, 8)
 		end
-	})
 
-	modes.CBC = table_freeze({
-		FwdMode = function(encp, _, text, out, _, iv)
-			local len = buffer_len(text) - 16
-			assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-			iv = iv or ZEROES
-			assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-			buffer_writeu32(out, 0, bit32_bxor(buffer_readu32(text, 0), buffer_readu32(iv, 0)))
-			buffer_writeu32(out, 4, bit32_bxor(buffer_readu32(text, 4), buffer_readu32(iv, 4)))
-			buffer_writeu32(out, 8, bit32_bxor(buffer_readu32(text, 8), buffer_readu32(iv, 8)))
-			buffer_writeu32(out, 12, bit32_bxor(buffer_readu32(text, 12), buffer_readu32(iv, 12)))
-			encp(out, 0, out, 0)
-			for offs = 16, len, 16 do
-				buffer_writeu32(out, offs, bit32_bxor(buffer_readu32(text, offs), buffer_readu32(out, offs - 16)))
-				buffer_writeu32(out, offs + 4, bit32_bxor(buffer_readu32(text, offs + 4), buffer_readu32(out, offs - 12)))
-				buffer_writeu32(out, offs + 8, bit32_bxor(buffer_readu32(text, offs + 8), buffer_readu32(out, offs - 8)))
-				buffer_writeu32(out, offs + 12, bit32_bxor(buffer_readu32(text, offs + 12), buffer_readu32(out, offs - 4)))
-				encp(out, offs, out, offs)
-			end
-		end,
-		InvMode = function(_, decp, ciph, out, _, iv)
-			local len = buffer_len(ciph) - 16
-			assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-			iv = iv or ZEROES
-			assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-			local w0 = buffer_readu32(ciph, 0); local w1 = buffer_readu32(ciph, 4)
-			local w2 = buffer_readu32(ciph, 8); local w3 = buffer_readu32(ciph, 12)
-			local w4, w5, w6, w7
-			decp(ciph, 0, out, 0)
-			buffer_writeu32(out, 0, bit32_bxor(buffer_readu32(out, 0), buffer_readu32(iv, 0)))
-			buffer_writeu32(out, 4, bit32_bxor(buffer_readu32(out, 4), buffer_readu32(iv, 4)))
-			buffer_writeu32(out, 8, bit32_bxor(buffer_readu32(out, 8), buffer_readu32(iv, 8)))
-			buffer_writeu32(out, 12, bit32_bxor(buffer_readu32(out, 12), buffer_readu32(iv, 12)))
-			for offs = 16, len, 16 do
-				w4 = buffer_readu32(ciph, offs)
-				w5 = buffer_readu32(ciph, offs + 4)
-				w6 = buffer_readu32(ciph, offs + 8)
-				w7 = buffer_readu32(ciph, offs + 12)
-				decp(ciph, offs, out, offs)
-				buffer_writeu32(out, offs, bit32_bxor(buffer_readu32(out, offs), w0))
-				buffer_writeu32(out, offs + 4, bit32_bxor(buffer_readu32(out, offs + 4), w1))
-				buffer_writeu32(out, offs + 8, bit32_bxor(buffer_readu32(out, offs + 8), w2))
-				buffer_writeu32(out, offs + 12, bit32_bxor(buffer_readu32(out, offs + 12), w3))
-				w0, w1, w2, w3 = w4, w5, w6, w7
-			end
-		end
-	})
+		local SBoxLookup = buffer.readu16(SBox_16, Word // 65536 * 2) * 65536 + buffer.readu16(SBox_16, Word % 65536 * 2)
+		Word = bit32.bxor(buffer.readu32(OutputBuffer, 168), SBoxLookup, 128)
+		buffer.writeu32(OutputBuffer, 192, Word)
 
-	modes.PCBC = table_freeze({
-		FwdMode = function(encp, _, text, out, _, iv)
-			local len = buffer_len(text) - 16
-			assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-			iv = iv or ZEROES
-			assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-			local w0 = buffer_readu32(text, 0); local w1 = buffer_readu32(text, 4)
-			local w2 = buffer_readu32(text, 8); local w3 = buffer_readu32(text, 12)
-			local w4, w5, w6, w7
-			buffer_writeu32(out, 0, bit32_bxor(w0, buffer_readu32(iv, 0)))
-			buffer_writeu32(out, 4, bit32_bxor(w1, buffer_readu32(iv, 4)))
-			buffer_writeu32(out, 8, bit32_bxor(w2, buffer_readu32(iv, 8)))
-			buffer_writeu32(out, 12, bit32_bxor(w3, buffer_readu32(iv, 12)))
-			encp(out, 0, out, 0)
-			for offs = 16, len, 16 do
-				w4 = buffer_readu32(text, offs)
-				w5 = buffer_readu32(text, offs + 4)
-				w6 = buffer_readu32(text, offs + 8)
-				w7 = buffer_readu32(text, offs + 12)
-				buffer_writeu32(out, offs, bit32_bxor(w0, w4, buffer_readu32(out, offs - 16)))
-				buffer_writeu32(out, offs + 4, bit32_bxor(w1, w5, buffer_readu32(out, offs - 12)))
-				buffer_writeu32(out, offs + 8, bit32_bxor(w2, w6, buffer_readu32(out, offs - 8)))
-				buffer_writeu32(out, offs + 12, bit32_bxor(w3, w7, buffer_readu32(out, offs - 4)))
-				encp(out, offs, out, offs)
-				w0, w1, w2, w3 = w4, w5, w6, w7
-			end
-		end,
-		InvMode = function(_, decp, ciph, out, _, iv)
-			local len = buffer_len(ciph) - 16
-			assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-			iv = iv or ZEROES
-			assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-			local w0 = buffer_readu32(ciph, 0); local w1 = buffer_readu32(ciph, 4)
-			local w2 = buffer_readu32(ciph, 8); local w3 = buffer_readu32(ciph, 12)
-			decp(ciph, 0, out, 0)
-			local w4 = bit32_bxor(buffer_readu32(out, 0), buffer_readu32(iv, 0))
-			local w5 = bit32_bxor(buffer_readu32(out, 4), buffer_readu32(iv, 4))
-			local w6 = bit32_bxor(buffer_readu32(out, 8), buffer_readu32(iv, 8))
-			local w7 = bit32_bxor(buffer_readu32(out, 12), buffer_readu32(iv, 12))
-			local w8, w9, w10, w11
-			buffer_writeu32(out, 0, w4)
-			buffer_writeu32(out, 4, w5)
-			buffer_writeu32(out, 8, w6)
-			buffer_writeu32(out, 12, w7)
-			local offp0, offp1, offp2, offp3 = 0, 4, 8, 12
-			for offs = 16, len, 16 do
-				offp0 += 16; offp1 += 16; offp2 += 16; offp3 += 16
-				w8 = buffer_readu32(ciph, offp0)
-				w9 = buffer_readu32(ciph, offp1)
-				w10 = buffer_readu32(ciph, offp2)
-				w11 = buffer_readu32(ciph, offp3)
-				decp(ciph, offs, out, offs)
-				w4 = bit32_bxor(w0, w4, buffer_readu32(out, offp0))
-				w5 = bit32_bxor(w1, w5, buffer_readu32(out, offp1))
-				w6 = bit32_bxor(w2, w6, buffer_readu32(out, offp2))
-				w7 = bit32_bxor(w3, w7, buffer_readu32(out, offp3))
-				w0, w1, w2, w3 = w8, w9, w10, w11
-				buffer_writeu32(out, offp0, w4)
-				buffer_writeu32(out, offp1, w5)
-				buffer_writeu32(out, offp2, w6)
-				buffer_writeu32(out, offp3, w7)
-			end
-		end
-	})
-
-	local function cfbFwd(encp, _, text, out, options: {CommonTemp: buffer, SegmentSize: number}, iv)
-		local segm = options.SegmentSize
-		local len = buffer_len(text)
-		assert(len % segm == 0, "Input length must be a multiple of segment size")
-		iv = iv or ZEROES
-		assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-		local temp = options.CommonTemp or buffer_create(31)
-		if len == segm then
-			encp(iv, 0, temp, 0)
-			for offs = 0, segm - 1 do
-				buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(text, offs), buffer_readu8(temp, offs)))
-			end
-		else
-			local last = len - segm; local offb = 16 - segm
-			local i
-			encp(iv, 0, temp, 0)
-			for offs = 0, segm - 1 do
-				buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(text, offs), buffer_readu8(temp, offs)))
-			end
-			buffer_copy(temp, 0, iv, segm, offb)
-			buffer_copy(temp, offb, out, 0, segm)
-			for offs = segm, last - segm, segm do
-				i = 0
-				buffer_copy(temp, 16, temp, segm, offb)
-				encp(temp, 0, temp, 0)
-				for offs = offs, offs + segm - 1 do
-					buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(text, offs), buffer_readu8(temp, i)))
-					i += 1
-				end
-				buffer_copy(temp, 0, temp, 16, offb)
-				buffer_copy(temp, offb, out, offs, segm)
-			end
-			encp(temp, 0, temp, 0)
-			i = 0
-			for offs = last, len - 1 do
-				buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(text, offs), buffer_readu8(temp, i)))
-				i += 1
-			end
-		end
-	end
-
-	local function cfbInv(encp, _, ciph, out, options: {CommonTemp: buffer, SegmentSize: number}, iv)
-		local len = buffer_len(ciph)
-		local segm = options.SegmentSize
-		assert(len % segm == 0, "Input length must be a multiple of segment size")
-		iv = iv or ZEROES
-		assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-		local temp = options.CommonTemp or buffer_create(31)
-		if len == segm then
-			encp(iv, 0, temp, 0)
-			for offs = 0, segm - 1 do
-				buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(ciph, offs), buffer_readu8(temp, offs)))
-			end
-		else
-			local last = len - segm; local offb = 16 - segm
-			local i
-			encp(iv, 0, temp, 0)
-			for offs = 0, segm - 1 do
-				buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(ciph, offs), buffer_readu8(temp, offs)))
-			end
-			buffer_copy(temp, 0, iv, segm, offb)
-			buffer_copy(temp, offb, ciph, 0, segm)
-			for offs = segm, last - segm, segm do
-				i = 0
-				buffer_copy(temp, 16, temp, segm, offb)
-				encp(temp, 0, temp, 0)
-				for offs = offs, offs + segm - 1 do
-					buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(ciph, offs), buffer_readu8(temp, i)))
-					i += 1
-				end
-				buffer_copy(temp, 0, temp, 16, offb)
-				buffer_copy(temp, offb, ciph, offs, segm)
-			end
-			encp(temp, 0, temp, 0)
-			i = 0
-			for offs = last, len - 1 do
-				buffer_writeu8(out, offs, bit32_bxor(buffer_readu8(ciph, offs), buffer_readu8(temp, i)))
-				i += 1
-			end
-		end
-	end
-
-	local function ofbMode(encp, _, text: buffer, out: buffer, _, iv: buffer)
-		local len = buffer_len(text) - 16
-		assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-		iv = iv or ZEROES
-		assert(buffer_len(iv) == 16, "Initialization vector must be 16 bytes long")
-		local w0 = buffer_readu32(text, 0); local w1 = buffer_readu32(text, 4)
-		local w2 = buffer_readu32(text, 8); local w3 = buffer_readu32(text, 12)
-		encp(iv, 0, out, 0)
-		w0 = bit32_bxor(w0, buffer_readu32(out, 0))
-		w1 = bit32_bxor(w1, buffer_readu32(out, 4))
-		w2 = bit32_bxor(w2, buffer_readu32(out, 8))
-		w3 = bit32_bxor(w3, buffer_readu32(out, 12))
-		local w4, w5, w6, w7
-		for offs = 16, len, 16 do
-			w4 = buffer_readu32(text, offs)
-			w5 = buffer_readu32(text, offs + 4)
-			w6 = buffer_readu32(text, offs + 8)
-			w7 = buffer_readu32(text, offs + 12)
-			encp(out, offs - 16, out, offs)
-			buffer_writeu32(out, offs - 16, w0)
-			buffer_writeu32(out, offs - 12, w1)
-			buffer_writeu32(out, offs - 8, w2)
-			buffer_writeu32(out, offs - 4, w3)
-			w0 = bit32_bxor(w4, buffer_readu32(out, offs))
-			w1 = bit32_bxor(w5, buffer_readu32(out, offs + 4))
-			w2 = bit32_bxor(w6, buffer_readu32(out, offs + 8))
-			w3 = bit32_bxor(w7, buffer_readu32(out, offs + 12))
-		end
-		buffer_writeu32(out, len, w0)
-		buffer_writeu32(out, len + 4, w1)
-		buffer_writeu32(out, len + 8, w2)
-		buffer_writeu32(out, len + 12, w3)
-	end
-	modes.OFB = table_freeze({
-		FwdMode = ofbMode, InvMode = ofbMode
-	})
-
-	local function ctrMode(encp, _, text, out, options: {CommonTemp: buffer, InitValue: string, Prefix: string, Suffix: string,
-		Step: number, LittleEndian: boolean})
-		local len = buffer_len(text) - 16
-		assert(len % 16 == 0, "Input length must be a multiple of 16 bytes")
-		local temp = options.CommonTemp
-		local init = options.InitValue; local pre = options.Prefix
-		local suf = options.Suffix; local step = options.Step; local le = options.LittleEndian
-		local offs0 = #pre; local offs1 = offs0 + #init - 1
-		buffer_writestring(temp, 0, pre)
-		buffer_writestring(temp, offs0, init)
-		buffer_writestring(temp, offs1 + 1, suf)
-		local w0 = buffer_readu32(text, 0); local w1 = buffer_readu32(text, 4)
-		local w2 = buffer_readu32(text, 8); local w3 = buffer_readu32(text, 12)
-		encp(temp, 0, out, 0)
-		buffer_writeu32(out, 0, bit32_bxor(buffer_readu32(out, 0), w0))
-		buffer_writeu32(out, 4, bit32_bxor(buffer_readu32(out, 4), w1))
-		buffer_writeu32(out, 8, bit32_bxor(buffer_readu32(out, 8), w2))
-		buffer_writeu32(out, 12, bit32_bxor(buffer_readu32(out, 12), w3))
-		for offs = 16, len, 16 do
-			w0 = buffer_readu32(text, offs)
-			w1 = buffer_readu32(text, offs + 4)
-			w2 = buffer_readu32(text, offs + 8)
-			w3 = buffer_readu32(text, offs + 12)
-			addByteCtr(temp, step, offs0, offs1, le)
-			encp(temp, 0, out, offs)
-			buffer_writeu32(out, offs, bit32_bxor(w0, buffer_readu32(out, offs)))
-			buffer_writeu32(out, offs + 4, bit32_bxor(w1, buffer_readu32(out, offs + 4)))
-			buffer_writeu32(out, offs + 8, bit32_bxor(w2, buffer_readu32(out, offs + 8)))
-			buffer_writeu32(out, offs + 12, bit32_bxor(w3, buffer_readu32(out, offs + 12)))
-		end
-	end
-
-	local meta = {
-		__index = function(_, idx: "CFB" | "CTR"): {}?
-			return if idx == "CFB" then {
-				FwdMode = cfbFwd, InvMode = cfbInv,
-				SegmentSize = 16,
-				CommonTemp = buffer_create(31)
-			} elseif idx == "CTR" then {
-					FwdMode = ctrMode, InvMode = ctrMode,
-					InitValue = string_pack("I2I2I2I2I2I2I2I2", math_random(0, 65535), math_random(0, 65535), math_random(0, 65535),
-						math_random(0, 65535), math_random(0, 65535), math_random(0, 65535), math_random(0, 65535), math_random(0, 65535)),
-					Prefix = "", Suffix = "", Step = 1, LittleEndian = false,
-					CommonTemp = buffer_create(16)
-				} else nil
-		end,
-		__newindex = function()
-		end
-	}
-	setmetatable(modes, meta)
-	modes.CFB = {} :: {FwdMode: typeof(cfbFwd), InvMode: typeof(cfbInv), CommonTemp: buffer, SegmentSize: number}
-	modes.CTR = {} :: {FwdMode: typeof(ctrMode), InvMode: typeof(ctrMode), CommonTemp: buffer, InitValue: string, Prefix: string, Suffix: string,
-		Step: number, LittleEndian: boolean}
-	table_freeze(modes)
-	meta.__metatable = "This metatable is locked"
-	return modes
-
-end)()
-
-local pads = (function()
-
-	local assert = assert
-	local error = error
-
-	local buffer_copy = 	buffer.copy
-	local buffer_create = 	buffer.create
-	local buffer_fill = 	buffer.fill
-	local buffer_len = 		buffer.len
-	local buffer_readu8 = 	buffer.readu8
-	local buffer_writeu8 = 	buffer.writeu8
-	local math_random = math.random
-	local table_freeze = table.freeze
-	local pads = {}
-
-	local function nonPad(text)
-		return text
-	end
-	pads.None = table_freeze({
-		Pad = nonPad, Unpad = nonPad,
-		Overwrite = false
-	})
-
-	local function anxPad(text, out, segm)
-		local len = buffer_len(text)
-		local offs = len - len % segm
-		if out then
-			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds")
-			local offb = segm - len % segm
-			buffer_copy(out, 0, text, 0, len)
-			buffer_fill(out, len, 0, offb - 1)
-			buffer_writeu8(out, offs + segm - 1, offb)
-		else
-			offs += segm
-			out = buffer_create(offs)
-			buffer_copy(out, 0, text, 0, len)
-			buffer_writeu8(out, offs - 1, segm - len % segm)
-		end
-		return out
-	end
-	local function anxUnpad(text, out, segm)
-		local len = buffer_len(text)
-		local offs = buffer_readu8(text, len - 1)
-		local offb = len - offs
-		assert(0 < offs and offs <= segm, "Got unexpected padding")
-		for offs = offb, len - 2 do
-			if buffer_readu8(text, offs) ~= 0 then
-				error("Got unexpected padding")
-			end
-		end
-		if out then
-			assert(buffer_len(out) >= offb, "Output buffer out of bounds")
-		else
-			out = buffer_create(offb)
-		end
-		buffer_copy(out, 0, text, 0, offb)
-		return out
-	end
-
-	local function i10Pad(text, out, segm)
-		local len = buffer_len(text)
-		local offs = len - len % segm
-		if out then
-			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds")
-		else
-			out = buffer_create(offs + segm)
-		end
-		buffer_copy(out, 0, text, 0, len)
-		for offs = len, offs + segm - 2 do
-			buffer_writeu8(out, offs, math_random(0, 255))
-		end
-		buffer_writeu8(out, offs + segm - 1, segm - len % segm)
-		return out
-	end
-
-	local function i10Unpad(text, out, segm)
-		local len = buffer_len(text)
-		local offs = buffer_readu8(text, len - 1)
-		local offb = len - offs
-		assert(0 < offs and offs <= segm, "Got unexpected padding")
-		if out then
-			assert(buffer_len(out) >= offb, "Output buffer out of bounds")
-		else
-			out = buffer_create(offb)
-		end
-		buffer_copy(out, 0, text, 0, offb)
-		return out
-	end
-
-	local function pksPad(text, out, segm)
-		local len = buffer_len(text)
-		local offs = len - len % segm
-		if out then
-			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds")
-		else
-			out = buffer_create(offs + segm)
-		end
-		local offb = segm - len % segm
-		buffer_copy(out, 0, text, 0, len)
-		buffer_fill(out, len, offb, offb)
-		return out
-	end
-
-	local function pksUnpad(text, out, segm)
-		local len = buffer_len(text)
-		local offs = buffer_readu8(text, len - 1)
-		local offb = len - offs
-		assert(0 < offs and offs <= segm, "Got unexpected padding")
-		for offb = offb, len - 2 do
-			if buffer_readu8(text, offb) ~= offs then
-				error("Got unexpected padding")
-			end
-		end
-		if out then
-			assert(buffer_len(out) >= offb, "Output buffer out of bounds")
-		else
-			out = buffer_create(offb)
-		end
-		buffer_copy(out, 0, text, 0, offb)
-		return out
-	end
-
-	local function ii7Pad(text, out, segm)
-		local len = buffer_len(text)
-		if out then
-			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds")
-			buffer_fill(out, len + 1, 0, segm - len % segm - 1)
-		else
-			out = buffer_create(len + segm - len % segm)
-		end
-		buffer_copy(out, 0, text, 0, len)
-		buffer_writeu8(out, len, 128)
-		return out
-	end
-	local function ii7Unpad(text, out, segm)
-		local len = buffer_len(text) - 1
-		local byte
-		for offs = len, len - segm, - 1 do
-			byte = buffer_readu8(text, offs)
-			if byte == 128 then
-				if out then
-					assert(buffer_len(out) >= offs, "Output buffer out of bounds")
-				else
-					out = buffer_create(offs)
-				end
-				buffer_copy(out, 0, text, 0, offs)
-				return out
-			else
-				assert(byte == 0, "Got unexpected padding")
-			end
-		end
-		error("Got unexpected padding")
-		return buffer_create(0)
-	end
-
-
-
-
-	local function zroPad(text, out, segm)
-		local len = buffer_len(text)
-		if out then
-			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds")
-			buffer_fill(out, len, 0, segm - len % segm)
-		else
-			out = buffer_create(len + segm - len % segm)
-		end
-		buffer_copy(out, 0, text, 0, len)
-		return out
-	end
-	local function zroUnpad(text, out, segm)
-		local len = buffer_len(text) - 1
-		local byte
-		for offs = len, len - segm, - 1 do
-			byte = buffer_readu8(text, offs)
-			if byte == 0 then
-				offs += 1
-				if out then
-					assert(buffer_len(out) >= offs, "Output buffer out of bounds")
-				else
-					out = buffer_create(offs)
-				end
-				buffer_copy(out, 0, text, 0, offs)
-				return out
-			end
-		end
-		buffer_copy(out, 0, text, 0, len - segm - 1)
-		return out
-	end
-
-	local meta = {
-		__index = function(_, idx: "AnsiX923" | "Iso10126" | "Pkcs7" | "Iso7816_4" | "Zero"): {}?
-			return if idx == "AnsiX923" then {
-				Pad = anxPad, Unpad = anxPad,
-				Overwrite = nil
-			} elseif idx == "Iso10126" then {
-					Pad = i10Pad, Unpad = i10Unpad,
-					Overwrite = nil
-				} elseif idx == "Pkcs7" then {
-					Pad = pksPad, Unpad = pksUnpad,
-					Overwrite = nil
-				} elseif idx == "Iso7816_4" then {
-					Pad = ii7Pad, Unpad = ii7Unpad,
-					Overwrite = nil
-				} elseif idx == "Zero" then {
-					Pad = zroPad, Unpad = zroUnpad,
-					Overwrite = nil
-				} else nil
-		end,
-		__newindex = function() end
-	}
-	setmetatable(pads, meta)
-	pads.AnsiX923 = 	{} :: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: nil | boolean}
-	pads.Iso10126 = 	{} :: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: nil | boolean}
-	pads.Pkcs7 = 		{} :: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: nil | boolean}
-	pads.Iso7816_4 = 	{} :: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: nil | boolean}
-	pads.Zero = 		{} :: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: nil | boolean}
-	table_freeze(pads)
-	meta.__metatable = "This metatable is locked"
-	return pads
-end)()
-
-local function expandKey(key: buffer | string, output: buffer?): buffer
-	local raw = typeof(key) == "buffer"
-	local len = if raw then buffer_len(key :: buffer) else #(key :: string)
-	local lenx = if len == 32 then 240 elseif len == 24 then 208 elseif len == 16 then 176 else error("Key must be either 16, 24 or 32 bytes long")
-	return keySchedule(key, len, output or buffer_create(lenx :: number), raw)
-end
-
-local function fromKey(roundKeys: buffer, mode: {FwdMode: ((input: buffer, offset: number, output: buffer, offsetOut: number) -> (),
-	(input: buffer, offset: number, output: buffer, offsetOut: number) -> (), buffer, buffer, {[string]: any},...any) -> (),
-	InvMode: ((input: buffer, offset: number, output: buffer, offsetOut: number) -> (),
-		(input: buffer, offset: number, output: buffer, offsetOut: number) -> (), buffer, buffer, {[string]: any},...any) -> ()}?,
-	pad: {Pad: (buffer, buffer?, number) -> buffer, Unpad: (buffer, buffer?, number) -> buffer, Overwrite: boolean?}?): AesCipher
-	local len: number? = buffer_len(roundKeys)
-	local lenm: number?; local key: string?
-	local keyst: string? = buffer_tostring(roundKeys)
-	if len == 240 then
-		lenm = 192
-		key = string_sub(keyst :: string, 1, 32)
-	elseif len == 208 then
-		lenm = 160
-		key = string_sub(keyst :: string, 1, 24)
-	elseif len == 176 then
-		lenm = 128
-		key = string_sub(keyst :: string, 1, 16)
+		local W1 = bit32.bxor(buffer.readu32(OutputBuffer, 172), Word)
+		buffer.writeu32(OutputBuffer, 196, W1)
+		local W2 = bit32.bxor(buffer.readu32(OutputBuffer, 176), W1)
+		buffer.writeu32(OutputBuffer, 200, W2)
+		buffer.writeu32(OutputBuffer, 204, bit32.bxor(buffer.readu32(OutputBuffer, 180), W2))
 	else
-		error("Round keys must be either 240, 208 or 128 bytes long")
+		for KeyOffset = 16, 144, 16 do
+			RoundConstant = RoundConstant * 2 % 229
+			local SBoxLookup = buffer.readu16(SBox_16, Word // 65536 * 2) * 65536 + buffer.readu16(SBox_16, Word % 65536 * 2)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 16), SBoxLookup, RoundConstant)
+			buffer.writeu32(OutputBuffer, KeyOffset, Word)
+
+			local W1 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 12), Word)
+			buffer.writeu32(OutputBuffer, KeyOffset + 4, W1)
+			local W2 = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 8), W1)
+			buffer.writeu32(OutputBuffer, KeyOffset + 8, W2)
+			Word = bit32.bxor(buffer.readu32(OutputBuffer, KeyOffset - 4), W2)
+			buffer.writeu32(OutputBuffer, KeyOffset + 12, Word)
+			Word = bit32.rrotate(Word, 8)
+		end
+
+		local SBoxLookup = buffer.readu16(SBox_16, Word // 65536 * 2) * 65536 + buffer.readu16(SBox_16, Word % 65536 * 2)
+		Word = bit32.bxor(buffer.readu32(OutputBuffer, 144), SBoxLookup, 54)
+		buffer.writeu32(OutputBuffer, 160, Word)
+
+		local W1 = bit32.bxor(buffer.readu32(OutputBuffer, 148), Word)
+		buffer.writeu32(OutputBuffer, 164, W1)
+		local W2 = bit32.bxor(buffer.readu32(OutputBuffer, 152), W1)
+		buffer.writeu32(OutputBuffer, 168, W2)
+		buffer.writeu32(OutputBuffer, 172, bit32.bxor(buffer.readu32(OutputBuffer, 156), W2))
 	end
 
-	local keym: buffer? = roundKeys
-	local mode: any = mode or modes.ECB
-	local fwd = mode.FwdMode; local inv = mode.InvMode; local segm = mode.SegmentSize or 16
-	local pad: any = pad or pads.Pkcs7
-	local pd = pad.Pad; local upd = pad.Unpad
-	local cipher = newproxy(true) :: AesCipher
-	local meta = getmetatable(cipher)
-
-	local function encp(plaintext, offset, output, offsetOut)
-		encryptBlock(keym :: buffer, lenm :: number, plaintext, offset, output, offsetOut)
-	end
-	local function decp(ciphertext, offset, output, offsetOut)
-		decryptBlock(keym :: buffer, lenm :: number, ciphertext, offset, output, offsetOut)
-	end
-	local function enc(self: AesCipher, plaintext, output, ...)
-		local raw = typeof(plaintext)
-		local text = if raw == "buffer" then plaintext :: buffer elseif raw == "string" then buffer_fromstring(plaintext)
-			else error(`Unable to cast {raw} to buffer`)
-		output = typeof(output) == "buffer" and output
-		if self ~= cipher then
-			return self:Encrypt(text, output :: buffer, ...)
-		elseif lenm then
-			local out = pd(text, output, segm)
-			fwd(encp, decp, if pad.Overwrite == false then text else out, out, mode, ...)
-			return out
-		else
-			error("AesCipher object's already destroyed")
-			return buffer_create(0)
-		end
-	end
-	local function encb(self: AesCipher, plaintext, offset, output, offsetOut)
-		if self ~= cipher then
-			self:EncryptBlock(plaintext, offset, output, offsetOut)
-		elseif lenm then
-			encryptBlock(keym :: buffer, lenm :: number, plaintext, offset, output or plaintext, offsetOut or offset)
-		else
-			error("AesCipher object's already destroyed")
-		end
-	end
-	local function dec(self: AesCipher, ciphertext, output, ...)
-		local raw = typeof(ciphertext)
-		local ciph = if raw == "buffer" then ciphertext :: buffer elseif raw == "string" then buffer_fromstring(ciphertext)
-			else error(`Unable to cast {raw} to buffer`)
-		output = typeof(output) == "buffer" and output
-		if self ~= cipher then
-			return self:Decrypt(ciph, output :: buffer, ...)
-		elseif lenm then
-			local ovw = pad.Overwrite
-			local text = if ovw == nil then buffer_create(buffer_len(ciph)) elseif ovw then ciph else output or buffer_create(buffer_len(ciph))
-			inv(encp, decp, ciph, text, mode, ...)
-			return upd(text, output, segm)
-		else
-			error("AesCipher object's already destroyed")
-			return buffer_create(0)
-		end
-	end
-	local function decb(self: AesCipher, ciphertext, offset, output, offsetOut)
-		if self ~= cipher then
-			self:DecryptBlock(ciphertext, offset, output, offsetOut)
-		elseif lenm then
-			decryptBlock(keym :: buffer, lenm :: number, ciphertext, offset, output or ciphertext, offsetOut or offset)
-		else
-			error("AesCipher object's already destroyed")
-		end
-	end
-	local function destroy(self: AesCipher): ()
-		if self ~= cipher then
-			self:Destroy()
-		elseif lenm then
-			keyst, keym, lenm, fwd, inv, mode, pad, key, len = nil, nil, nil, nil, nil, nil, nil, nil, nil
-		else
-			error("AesCipher object's already destroyed")
-		end
-	end
-
-	meta.__index = function(_, idx)
-		return if idx == "Encrypt" then enc elseif idx == "Decrypt" then dec elseif idx == "EncryptBlock" then encb elseif idx == "DecryptBlock" then decb
-			elseif idx == "Destroy" then destroy elseif lenm then (if idx == "Key" then key elseif idx == "RoundKeys" then keyst
-				elseif idx == "Mode" then mode elseif idx == "Padding" then pad elseif idx == "Length" then len
-				else error(`{idx} is not a valid member of AesCipher`)) else error("AesCipher object's already destroyed")
-	end
-	meta.__newindex = newidx
-	meta.__tostring = tostr
-	meta.__len = function(): number
-		return len or error("AesCipher object's destroyed")
-	end
-	meta.__metatable = "AesCipher object: Metatable's locked"
-	return cipher
+	return OutputBuffer
 end
 
-return table.freeze({
-	new = function(masterKey, mode, pad)
-		return fromKey(expandKey(masterKey), mode, pad)
-	end,
-	expandKey = expandKey,
-	fromKey = fromKey,
-	modes = modes,
-	pads = pads
-})
+local A0: number, A1: number, A2: number, A3: number, A4: number, A5: number, A6: number, A7: number, A8: number, A9: number, A10: number, A11: number, A12: number, A13: number, A14: number, A15: number
+local function EncryptBlock(RoundKeys: buffer, MaterialLength: number, Plaintext: buffer, PlaintextOffset: number, Output: buffer, OutputOffset: number)
+	A0 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset), buffer.readu8(RoundKeys, 0))
+	A1 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 1), buffer.readu8(RoundKeys, 1))
+	A2 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 2), buffer.readu8(RoundKeys, 2))
+	A3 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 3), buffer.readu8(RoundKeys, 3))
+	A4 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 4), buffer.readu8(RoundKeys, 4))
+	A5 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 5), buffer.readu8(RoundKeys, 5))
+	A6 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 6), buffer.readu8(RoundKeys, 6))
+	A7 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 7), buffer.readu8(RoundKeys, 7))
+	A8 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 8), buffer.readu8(RoundKeys, 8))
+	A9 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 9), buffer.readu8(RoundKeys, 9))
+	A10 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 10), buffer.readu8(RoundKeys, 10))
+	A11 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 11), buffer.readu8(RoundKeys, 11))
+	A12 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 12), buffer.readu8(RoundKeys, 12))
+	A13 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 13), buffer.readu8(RoundKeys, 13))
+	A14 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 14), buffer.readu8(RoundKeys, 14))
+	A15 = bit32.bxor(buffer.readu8(Plaintext, PlaintextOffset + 15), buffer.readu8(RoundKeys, 15))
+
+	local B0: number, B1: number, B2: number, B3: number, B4: number, B5: number, B6: number, B7: number, B8: number, B9: number, B10: number, B11: number, B12: number, B13: number, B14: number, B15: number
+		= A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15
+
+	local I0: number = B0 * 256 + B5; local I1: number = B5 * 256 + B10; local I2: number = B10 * 256 + B15; local I3: number = B15 * 256 + B0
+	local I4: number = B4 * 256 + B9; local I5: number = B9 * 256 + B14; local I6: number = B14 * 256 + B3; local I7: number = B3 * 256 + B4
+	local I8: number = B8 * 256 + B13; local I9: number = B13 * 256 + B2; local I10: number = B2 * 256 + B7; local I11: number = B7 * 256 + B8
+	local I12: number = B12 * 256 + B1; local I13: number = B1 * 256 + B6; local I14: number = B6 * 256 + B11; local I15: number = B11 * 256 + B12
+
+	local Tbl0, Tbl1 = SMIX_TABLE0, SMIX_TABLE1
+	for RoundOffset = 16, MaterialLength, 16 do
+		B0 = bit32.bxor(buffer.readu8(Tbl0, I0), buffer.readu8(Tbl1, I2), buffer.readu8(RoundKeys, RoundOffset))
+		B1 = bit32.bxor(buffer.readu8(Tbl0, I1), buffer.readu8(Tbl1, I3), buffer.readu8(RoundKeys, RoundOffset + 1))
+		B2 = bit32.bxor(buffer.readu8(Tbl0, I2), buffer.readu8(Tbl1, I0), buffer.readu8(RoundKeys, RoundOffset + 2))
+		B3 = bit32.bxor(buffer.readu8(Tbl0, I3), buffer.readu8(Tbl1, I1), buffer.readu8(RoundKeys, RoundOffset + 3))
+		B4 = bit32.bxor(buffer.readu8(Tbl0, I4), buffer.readu8(Tbl1, I6), buffer.readu8(RoundKeys, RoundOffset + 4))
+		B5 = bit32.bxor(buffer.readu8(Tbl0, I5), buffer.readu8(Tbl1, I7), buffer.readu8(RoundKeys, RoundOffset + 5))
+		B6 = bit32.bxor(buffer.readu8(Tbl0, I6), buffer.readu8(Tbl1, I4), buffer.readu8(RoundKeys, RoundOffset + 6))
+		B7 = bit32.bxor(buffer.readu8(Tbl0, I7), buffer.readu8(Tbl1, I5), buffer.readu8(RoundKeys, RoundOffset + 7))
+		B8 = bit32.bxor(buffer.readu8(Tbl0, I8), buffer.readu8(Tbl1, I10), buffer.readu8(RoundKeys, RoundOffset + 8))
+		B9 = bit32.bxor(buffer.readu8(Tbl0, I9), buffer.readu8(Tbl1, I11), buffer.readu8(RoundKeys, RoundOffset + 9))
+		B10 = bit32.bxor(buffer.readu8(Tbl0, I10), buffer.readu8(Tbl1, I8), buffer.readu8(RoundKeys, RoundOffset + 10))
+		B11 = bit32.bxor(buffer.readu8(Tbl0, I11), buffer.readu8(Tbl1, I9), buffer.readu8(RoundKeys, RoundOffset + 11))
+		B12 = bit32.bxor(buffer.readu8(Tbl0, I12), buffer.readu8(Tbl1, I14), buffer.readu8(RoundKeys, RoundOffset + 12))
+		B13 = bit32.bxor(buffer.readu8(Tbl0, I13), buffer.readu8(Tbl1, I15), buffer.readu8(RoundKeys, RoundOffset + 13))
+		B14 = bit32.bxor(buffer.readu8(Tbl0, I14), buffer.readu8(Tbl1, I12), buffer.readu8(RoundKeys, RoundOffset + 14))
+		B15 = bit32.bxor(buffer.readu8(Tbl0, I15), buffer.readu8(Tbl1, I13), buffer.readu8(RoundKeys, RoundOffset + 15))
+
+		I0, I1, I2, I3 = B0 * 256 + B5, B5 * 256 + B10, B10 * 256 + B15, B15 * 256 + B0
+		I4, I5, I6, I7 = B4 * 256 + B9, B9 * 256 + B14, B14 * 256 + B3, B3 * 256 + B4
+		I8, I9, I10, I11 = B8 * 256 + B13, B13 * 256 + B2, B2 * 256 + B7, B7 * 256 + B8
+		I12, I13, I14, I15 = B12 * 256 + B1, B1 * 256 + B6, B6 * 256 + B11, B11 * 256 + B12
+	end
+
+	buffer.writeu32(Output, OutputOffset, bit32.bxor(
+		buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I15), buffer.readu8(SMIX_TABLE1, I13), buffer.readu8(RoundKeys, MaterialLength + 31)) * 512 +
+			bit32.bxor(buffer.readu8(Tbl0, I10), buffer.readu8(SMIX_TABLE1, I8), buffer.readu8(RoundKeys, MaterialLength + 26)) * 2) * 65536 +
+			buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I5), buffer.readu8(SMIX_TABLE1, I7), buffer.readu8(RoundKeys, MaterialLength + 21)) * 512 +
+				bit32.bxor(buffer.readu8(Tbl0, I0), buffer.readu8(SMIX_TABLE1, I2), buffer.readu8(RoundKeys, MaterialLength + 16)) * 2),
+		buffer.readu32(RoundKeys, MaterialLength + 32)
+		))
+
+	buffer.writeu32(Output, OutputOffset + 4, bit32.bxor(
+		buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I3), buffer.readu8(SMIX_TABLE1, I1), buffer.readu8(RoundKeys, MaterialLength + 19)) * 512 +
+			bit32.bxor(buffer.readu8(Tbl0, I14), buffer.readu8(SMIX_TABLE1, I12), buffer.readu8(RoundKeys, MaterialLength + 30)) * 2) * 65536 +
+			buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I9), buffer.readu8(SMIX_TABLE1, I11), buffer.readu8(RoundKeys, MaterialLength + 25)) * 512 +
+				bit32.bxor(buffer.readu8(Tbl0, I4), buffer.readu8(SMIX_TABLE1, I6), buffer.readu8(RoundKeys, MaterialLength + 20)) * 2),
+		buffer.readu32(RoundKeys, MaterialLength + 36)
+		))
+
+	buffer.writeu32(Output, OutputOffset + 8, bit32.bxor(
+		buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I7), buffer.readu8(SMIX_TABLE1, I5), buffer.readu8(RoundKeys, MaterialLength + 23)) * 512 +
+			bit32.bxor(buffer.readu8(Tbl0, I2), buffer.readu8(SMIX_TABLE1, I0), buffer.readu8(RoundKeys, MaterialLength + 18)) * 2) * 65536 +
+			buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I13), buffer.readu8(SMIX_TABLE1, I15), buffer.readu8(RoundKeys, MaterialLength + 29)) * 512 +
+				bit32.bxor(buffer.readu8(Tbl0, I8), buffer.readu8(SMIX_TABLE1, I10), buffer.readu8(RoundKeys, MaterialLength + 24)) * 2),
+		buffer.readu32(RoundKeys, MaterialLength + 40)
+		))
+
+	buffer.writeu32(Output, OutputOffset + 12, bit32.bxor(
+		buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I11), buffer.readu8(SMIX_TABLE1, I9), buffer.readu8(RoundKeys, MaterialLength + 27)) * 512 +
+			bit32.bxor(buffer.readu8(Tbl0, I6), buffer.readu8(SMIX_TABLE1, I4), buffer.readu8(RoundKeys, MaterialLength + 22)) * 2) * 65536 +
+			buffer.readu16(SBOX_16BIT, bit32.bxor(buffer.readu8(Tbl0, I1), buffer.readu8(SMIX_TABLE1, I3), buffer.readu8(RoundKeys, MaterialLength + 17)) * 512 +
+				bit32.bxor(buffer.readu8(Tbl0, I12), buffer.readu8(SMIX_TABLE1, I14), buffer.readu8(RoundKeys, MaterialLength + 28)) * 2),
+		buffer.readu32(RoundKeys, MaterialLength + 44)
+		))
+end
+
+local function ConstantTimeCompare(Buffer1: buffer, Buffer2: buffer): boolean
+	local Length1 = buffer.len(Buffer1)
+	local Length2 = buffer.len(Buffer2)
+	if Length1 ~= Length2 then
+		return false
+	end
+
+	local Difference = 0
+	for Index = 0, Length1 - 1 do
+		Difference = bit32.bor(Difference, bit32.bxor(
+			buffer.readu8(Buffer1, Index),
+			buffer.readu8(Buffer2, Index)
+			))
+	end
+
+	return Difference == 0
+end
+
+local function BuildShoupTables(H: buffer): buffer
+	local Doubles = DOUBLES
+	local AllTables = ALL_TABLES
+
+	buffer.copy(Doubles, 0, H, 0, 16)
+
+	for I = 1, 127 do
+		local PrevOffset = (I - 1) * 16
+		local CurrOffset = I * 16
+
+		local LSB = bit32.band(buffer.readu8(Doubles, PrevOffset + 15), 1)
+
+		local Carry = 0
+		for BytePos = 0, 15 do
+			local B = buffer.readu8(Doubles, PrevOffset + BytePos)
+			local NewCarry = bit32.lshift(bit32.band(B, 1), 7)
+			buffer.writeu8(Doubles, CurrOffset + BytePos, bit32.bor(bit32.rshift(B, 1), Carry))
+			Carry = NewCarry
+		end
+
+		if LSB == 1 then
+			buffer.writeu8(Doubles, CurrOffset, bit32.bxor(buffer.readu8(Doubles, CurrOffset), 0xE1))
+		end
+	end
+
+	for NibbleIdx = 0, 31 do
+		local TableOffset = NibbleIdx * 256
+
+		buffer.writeu32(AllTables, TableOffset, 0)
+		buffer.writeu32(AllTables, TableOffset + 4, 0)
+		buffer.writeu32(AllTables, TableOffset + 8, 0)
+		buffer.writeu32(AllTables, TableOffset + 12, 0)
+
+		for Entry = 1, 15 do
+			local EntryOffset = TableOffset + Entry * 16
+			local Z0, Z1, Z2, Z3 = 0, 0, 0, 0
+
+			for Bit = 0, 3 do
+				if bit32.band(Entry, bit32.lshift(1, 3 - Bit)) ~= 0 then
+					local DoubleOffset = (NibbleIdx * 4 + Bit) * 16
+
+					Z0 = bit32.bxor(Z0, buffer.readu32(Doubles, DoubleOffset))
+					Z1 = bit32.bxor(Z1, buffer.readu32(Doubles, DoubleOffset + 4))
+					Z2 = bit32.bxor(Z2, buffer.readu32(Doubles, DoubleOffset + 8))
+					Z3 = bit32.bxor(Z3, buffer.readu32(Doubles, DoubleOffset + 12))
+				end
+			end
+
+			buffer.writeu32(AllTables, EntryOffset, Z0)
+			buffer.writeu32(AllTables, EntryOffset + 4, Z1)
+			buffer.writeu32(AllTables, EntryOffset + 8, Z2)
+			buffer.writeu32(AllTables, EntryOffset + 12, Z3)
+		end
+	end
+
+	return AllTables
+end
+
+local function GfMult(Y: buffer, Tables: buffer, Z: buffer)
+	local Z0, Z1, Z2, Z3 = 0, 0, 0, 0
+
+	for ByteIdx = 0, 15 do
+		local ByteVal = buffer.readu8(Y, ByteIdx)
+		local BaseOffset = ByteIdx * 512
+
+		local HighOffset = BaseOffset + bit32.rshift(ByteVal, 4) * 16
+		Z0 = bit32.bxor(Z0, buffer.readu32(Tables, HighOffset))
+		Z1 = bit32.bxor(Z1, buffer.readu32(Tables, HighOffset + 4))
+		Z2 = bit32.bxor(Z2, buffer.readu32(Tables, HighOffset + 8))
+		Z3 = bit32.bxor(Z3, buffer.readu32(Tables, HighOffset + 12))
+
+		local LowOffset = BaseOffset + 256 + bit32.band(ByteVal, 0x0F) * 16
+		Z0 = bit32.bxor(Z0, buffer.readu32(Tables, LowOffset))
+		Z1 = bit32.bxor(Z1, buffer.readu32(Tables, LowOffset + 4))
+		Z2 = bit32.bxor(Z2, buffer.readu32(Tables, LowOffset + 8))
+		Z3 = bit32.bxor(Z3, buffer.readu32(Tables, LowOffset + 12))
+	end
+
+	buffer.writeu32(Z, 0, Z0)
+	buffer.writeu32(Z, 4, Z1)
+	buffer.writeu32(Z, 8, Z2)
+	buffer.writeu32(Z, 12, Z3)
+end
+
+local function Ghash(Tables: buffer, X: buffer, XLen: number, Y: buffer)
+	local M = math.floor(XLen / 16)
+	local XPos = 0
+	local Tmp = buffer.create(16)
+	local GfMult = GfMult
+
+	for _ = 1, M do
+		buffer.writeu32(Y, 0, bit32.bxor(buffer.readu32(Y, 0), buffer.readu32(X, XPos)))
+		buffer.writeu32(Y, 4, bit32.bxor(buffer.readu32(Y, 4), buffer.readu32(X, XPos + 4)))
+		buffer.writeu32(Y, 8, bit32.bxor(buffer.readu32(Y, 8), buffer.readu32(X, XPos + 8)))
+		buffer.writeu32(Y, 12, bit32.bxor(buffer.readu32(Y, 12), buffer.readu32(X, XPos + 12)))
+		XPos += 16
+
+		GfMult(Y, Tables, Tmp)
+
+		buffer.writeu32(Y, 0, buffer.readu32(Tmp, 0))
+		buffer.writeu32(Y, 4, buffer.readu32(Tmp, 4))
+		buffer.writeu32(Y, 8, buffer.readu32(Tmp, 8))
+		buffer.writeu32(Y, 12, buffer.readu32(Tmp, 12))
+	end
+
+	if XPos < XLen then
+		local Last = XLen - XPos
+		buffer.writeu32(Tmp, 0, 0)
+		buffer.writeu32(Tmp, 4, 0)
+		buffer.writeu32(Tmp, 8, 0)
+		buffer.writeu32(Tmp, 12, 0)
+		buffer.copy(Tmp, 0, X, XPos, Last)
+
+		buffer.writeu32(Y, 0, bit32.bxor(buffer.readu32(Y, 0), buffer.readu32(Tmp, 0)))
+		buffer.writeu32(Y, 4, bit32.bxor(buffer.readu32(Y, 4), buffer.readu32(Tmp, 4)))
+		buffer.writeu32(Y, 8, bit32.bxor(buffer.readu32(Y, 8), buffer.readu32(Tmp, 8)))
+		buffer.writeu32(Y, 12, bit32.bxor(buffer.readu32(Y, 12), buffer.readu32(Tmp, 12)))
+
+		GfMult(Y, Tables, Tmp)
+
+		buffer.writeu32(Y, 0, buffer.readu32(Tmp, 0))
+		buffer.writeu32(Y, 4, buffer.readu32(Tmp, 4))
+		buffer.writeu32(Y, 8, buffer.readu32(Tmp, 8))
+		buffer.writeu32(Y, 12, buffer.readu32(Tmp, 12))
+	end
+end
+
+local function Gctr(RoundKeys: buffer, KeyMaterialLength: number, ICB: buffer, X: buffer, XLen: number, Y: buffer)
+	if XLen == 0 then
+		return
+	end
+
+	local N = math.floor(XLen / 16)
+	local CB = buffer.create(16)
+	local Tmp = buffer.create(16)
+	local XPos = 0
+	local YPos = 0
+
+	buffer.writeu32(CB, 0, buffer.readu32(ICB, 0))
+	buffer.writeu32(CB, 4, buffer.readu32(ICB, 4))
+	buffer.writeu32(CB, 8, buffer.readu32(ICB, 8))
+	buffer.writeu32(CB, 12, buffer.readu32(ICB, 12))
+
+	local Encrypt = EncryptBlock
+
+	for I = 0, N - 1 do
+		Encrypt(RoundKeys, KeyMaterialLength, CB, 0, Tmp, 0)
+
+		buffer.writeu32(Y, YPos + 0, bit32.bxor(buffer.readu32(X, XPos + 0), buffer.readu32(Tmp, 0)))
+		buffer.writeu32(Y, YPos + 4, bit32.bxor(buffer.readu32(X, XPos + 4), buffer.readu32(Tmp, 4)))
+		buffer.writeu32(Y, YPos + 8, bit32.bxor(buffer.readu32(X, XPos + 8), buffer.readu32(Tmp, 8)))
+		buffer.writeu32(Y, YPos + 12, bit32.bxor(buffer.readu32(X, XPos + 12), buffer.readu32(Tmp, 12)))
+
+		XPos += 16
+		YPos += 16
+
+		local Val = bit32.byteswap(buffer.readu32(CB, 12))
+		Val = (Val + 1) % 0x100000000
+		buffer.writeu32(CB, 12, bit32.byteswap(Val))
+	end
+
+	local Last = XLen - XPos
+	if Last > 0 then
+		EncryptBlock(RoundKeys, KeyMaterialLength, CB, 0, Tmp, 0)
+		for I = 0, Last - 1 do
+			local XByte = buffer.readu8(X, XPos + I)
+			local TmpByte = buffer.readu8(Tmp, I)
+			buffer.writeu8(Y, YPos + I, bit32.bxor(XByte, TmpByte))
+		end
+	end
+end
+
+local function PrepareJ0(H: buffer, IV: buffer, IVLen: number, J0: buffer): buffer
+	local Tables = BuildShoupTables(H)
+
+	if IVLen == 12 then
+		buffer.writeu32(J0, 0, buffer.readu32(IV, 0))
+		buffer.writeu32(J0, 4, buffer.readu32(IV, 4))
+		buffer.writeu32(J0, 8, buffer.readu32(IV, 8))
+		buffer.writeu32(J0, 12, 0x01000000)
+	else
+		buffer.writeu32(J0, 0, 0)
+		buffer.writeu32(J0, 4, 0)
+		buffer.writeu32(J0, 8, 0)
+		buffer.writeu32(J0, 12, 0)
+
+		Ghash(Tables, IV, IVLen, J0)
+
+		local LenBuf = buffer.create(16)
+		local IVLenBits = IVLen * 8
+
+		buffer.writeu32(LenBuf, 0, 0)
+		buffer.writeu32(LenBuf, 4, 0)
+		buffer.writeu32(LenBuf, 8, 0)
+		buffer.writeu32(LenBuf, 12, bit32.byteswap(IVLenBits))
+
+		Ghash(Tables, LenBuf, 16, J0)
+	end
+
+	return Tables
+end
+
+local function GcmGctr(RoundKeys: buffer, KeyMaterialLength: number, J0: buffer, Input: buffer, Len: number, Output: buffer)
+	if Len == 0 then
+		return
+	end
+
+	local J0Inc = buffer.create(16)
+
+	buffer.writeu32(J0Inc, 0, buffer.readu32(J0, 0))
+	buffer.writeu32(J0Inc, 4, buffer.readu32(J0, 4))
+	buffer.writeu32(J0Inc, 8, buffer.readu32(J0, 8))
+	buffer.writeu32(J0Inc, 12, buffer.readu32(J0, 12))
+
+	local Val = bit32.byteswap(buffer.readu32(J0Inc, 12))
+	Val = (Val + 1) % 0x100000000
+	buffer.writeu32(J0Inc, 12, bit32.byteswap(Val))
+
+	Gctr(RoundKeys, KeyMaterialLength, J0Inc, Input, Len, Output)
+end
+
+local function GcmHash(Tables: buffer, AAD: buffer, AADLen: number, Crypt: buffer, CryptLen: number, S: buffer)
+	local Tmp = buffer.create(16)
+	local GfMult = GfMult
+
+	buffer.writeu32(S, 0, 0)
+	buffer.writeu32(S, 4, 0)
+	buffer.writeu32(S, 8, 0)
+	buffer.writeu32(S, 12, 0)
+
+	local M = math.floor(AADLen / 16)
+	local XPos = 0
+
+	for _ = 1, M do
+		buffer.writeu32(S, 0, bit32.bxor(buffer.readu32(S, 0), buffer.readu32(AAD, XPos)))
+		buffer.writeu32(S, 4, bit32.bxor(buffer.readu32(S, 4), buffer.readu32(AAD, XPos + 4)))
+		buffer.writeu32(S, 8, bit32.bxor(buffer.readu32(S, 8), buffer.readu32(AAD, XPos + 8)))
+		buffer.writeu32(S, 12, bit32.bxor(buffer.readu32(S, 12), buffer.readu32(AAD, XPos + 12)))
+		XPos += 16
+
+		GfMult(S, Tables, Tmp)
+
+		buffer.writeu32(S, 0, buffer.readu32(Tmp, 0))
+		buffer.writeu32(S, 4, buffer.readu32(Tmp, 4))
+		buffer.writeu32(S, 8, buffer.readu32(Tmp, 8))
+		buffer.writeu32(S, 12, buffer.readu32(Tmp, 12))
+	end
+
+	if XPos < AADLen then
+		local Last = AADLen - XPos
+		buffer.writeu32(Tmp, 0, 0)
+		buffer.writeu32(Tmp, 4, 0)
+		buffer.writeu32(Tmp, 8, 0)
+		buffer.writeu32(Tmp, 12, 0)
+		buffer.copy(Tmp, 0, AAD, XPos, Last)
+
+		buffer.writeu32(S, 0, bit32.bxor(buffer.readu32(S, 0), buffer.readu32(Tmp, 0)))
+		buffer.writeu32(S, 4, bit32.bxor(buffer.readu32(S, 4), buffer.readu32(Tmp, 4)))
+		buffer.writeu32(S, 8, bit32.bxor(buffer.readu32(S, 8), buffer.readu32(Tmp, 8)))
+		buffer.writeu32(S, 12, bit32.bxor(buffer.readu32(S, 12), buffer.readu32(Tmp, 12)))
+
+		GfMult(S, Tables, Tmp)
+
+		buffer.writeu32(S, 0, buffer.readu32(Tmp, 0))
+		buffer.writeu32(S, 4, buffer.readu32(Tmp, 4))
+		buffer.writeu32(S, 8, buffer.readu32(Tmp, 8))
+		buffer.writeu32(S, 12, buffer.readu32(Tmp, 12))
+	end
+
+	M = math.floor(CryptLen / 16)
+	XPos = 0
+
+	for _ = 1, M do
+		buffer.writeu32(S, 0, bit32.bxor(buffer.readu32(S, 0), buffer.readu32(Crypt, XPos)))
+		buffer.writeu32(S, 4, bit32.bxor(buffer.readu32(S, 4), buffer.readu32(Crypt, XPos + 4)))
+		buffer.writeu32(S, 8, bit32.bxor(buffer.readu32(S, 8), buffer.readu32(Crypt, XPos + 8)))
+		buffer.writeu32(S, 12, bit32.bxor(buffer.readu32(S, 12), buffer.readu32(Crypt, XPos + 12)))
+		XPos += 16
+
+		GfMult(S, Tables, Tmp)
+
+		buffer.writeu32(S, 0, buffer.readu32(Tmp, 0))
+		buffer.writeu32(S, 4, buffer.readu32(Tmp, 4))
+		buffer.writeu32(S, 8, buffer.readu32(Tmp, 8))
+		buffer.writeu32(S, 12, buffer.readu32(Tmp, 12))
+	end
+
+	if XPos < CryptLen then
+		local Last = CryptLen - XPos
+		buffer.writeu32(Tmp, 0, 0)
+		buffer.writeu32(Tmp, 4, 0)
+		buffer.writeu32(Tmp, 8, 0)
+		buffer.writeu32(Tmp, 12, 0)
+		buffer.copy(Tmp, 0, Crypt, XPos, Last)
+
+		buffer.writeu32(S, 0, bit32.bxor(buffer.readu32(S, 0), buffer.readu32(Tmp, 0)))
+		buffer.writeu32(S, 4, bit32.bxor(buffer.readu32(S, 4), buffer.readu32(Tmp, 4)))
+		buffer.writeu32(S, 8, bit32.bxor(buffer.readu32(S, 8), buffer.readu32(Tmp, 8)))
+		buffer.writeu32(S, 12, bit32.bxor(buffer.readu32(S, 12), buffer.readu32(Tmp, 12)))
+
+		GfMult(S, Tables, Tmp)
+
+		buffer.writeu32(S, 0, buffer.readu32(Tmp, 0))
+		buffer.writeu32(S, 4, buffer.readu32(Tmp, 4))
+		buffer.writeu32(S, 8, buffer.readu32(Tmp, 8))
+		buffer.writeu32(S, 12, buffer.readu32(Tmp, 12))
+	end
+
+	local AADLenBits = AADLen * 8
+	local CryptLenBits = CryptLen * 8
+
+	buffer.writeu32(S, 4, bit32.bxor(buffer.readu32(S, 4), bit32.byteswap(AADLenBits)))
+	buffer.writeu32(S, 12, bit32.bxor(buffer.readu32(S, 12), bit32.byteswap(CryptLenBits)))
+
+	GfMult(S, Tables, Tmp)
+
+	buffer.writeu32(S, 0, buffer.readu32(Tmp, 0))
+	buffer.writeu32(S, 4, buffer.readu32(Tmp, 4))
+	buffer.writeu32(S, 8, buffer.readu32(Tmp, 8))
+	buffer.writeu32(S, 12, buffer.readu32(Tmp, 12))
+end
+
+function AES.Encrypt(Plaintext: buffer, Key: buffer, IV: buffer, AAD: buffer?): (buffer, buffer)
+	if not Key or typeof(Key) ~= "buffer" then
+		error("Key must be a buffer", 2)
+	end
+
+	if not IV or typeof(IV) ~= "buffer" then
+		error("IV must be a buffer", 2)
+	end
+
+	if not Plaintext or typeof(Plaintext) ~= "buffer" then
+		error("Plaintext must be a buffer", 2)
+	end
+
+	local KeyLength = buffer.len(Key)
+	if KeyLength ~= 16 and KeyLength ~= 24 and KeyLength ~= 32 then
+		error("Key must be 16, 24, or 32 bytes", 2)
+	end
+
+	local KeyConfig = KEY_CONFIGS[KeyLength]
+	local RoundKeys = ExpandKeySchedule(Key, KeyLength, buffer.create(KeyConfig.ExpandedLength))
+	local KeyMaterialLength = KeyConfig.MaterialLength
+
+	local IVLen = buffer.len(IV)
+	local AADLen = buffer.len(AAD or buffer.create(0))
+	local PlainLen = buffer.len(Plaintext)
+	local AuthData = AAD or buffer.create(0)
+
+	local OutputBuffer = buffer.create(PlainLen)
+	local OutputTag = buffer.create(16)
+
+	local H = buffer.create(16)
+	local J0 = buffer.create(16)
+	local S = buffer.create(16)
+
+	EncryptBlock(RoundKeys, KeyMaterialLength, H, 0, H, 0)
+	local Tables = PrepareJ0(H, IV, IVLen, J0)
+	GcmGctr(RoundKeys, KeyMaterialLength, J0, Plaintext, PlainLen, OutputBuffer)
+	GcmHash(Tables, AuthData, AADLen, OutputBuffer, PlainLen, S)
+	Gctr(RoundKeys, KeyMaterialLength, J0, S, 16, OutputTag)
+
+	return OutputBuffer, OutputTag
+end
+
+function AES.Decrypt(Ciphertext: buffer, Key: buffer, IV: buffer, Tag: buffer, AAD: buffer?): (boolean, buffer?)
+	if not Key or typeof(Key) ~= "buffer" then
+		error("Key must be a buffer", 2)
+	end
+
+	if not IV or typeof(IV) ~= "buffer" then
+		error("IV must be a buffer", 2)
+	end
+
+	if not Ciphertext or typeof(Ciphertext) ~= "buffer" then
+		error("Ciphertext must be a buffer", 2)
+	end
+
+	if not Tag or typeof(Tag) ~= "buffer" then
+		error("Tag must be a buffer", 2)
+	end
+
+	local KeyLength = buffer.len(Key)
+	if KeyLength ~= 16 and KeyLength ~= 24 and KeyLength ~= 32 then
+		error("Key must be 16, 24, or 32 bytes", 2)
+	end
+
+	local KeyConfig = KEY_CONFIGS[KeyLength]
+	local RoundKeys = ExpandKeySchedule(Key, KeyLength, buffer.create(KeyConfig.ExpandedLength))
+	local KeyMaterialLength = KeyConfig.MaterialLength
+
+	local IVLen = buffer.len(IV)
+	local AADLen = buffer.len(AAD or buffer.create(0))
+	local CryptLen = buffer.len(Ciphertext)
+	local AuthData = AAD or buffer.create(0)
+
+	local OutputBuffer = buffer.create(CryptLen)
+
+	local H = buffer.create(16)
+	local J0 = buffer.create(16)
+	local S = buffer.create(16)
+	local ComputedTag = buffer.create(16)
+
+	EncryptBlock(RoundKeys, KeyMaterialLength, H, 0, H, 0)
+	local Tables = PrepareJ0(H, IV, IVLen, J0)
+	GcmGctr(RoundKeys, KeyMaterialLength, J0, Ciphertext, CryptLen, OutputBuffer)
+	GcmHash(Tables, AuthData, AADLen, Ciphertext, CryptLen, S)
+	Gctr(RoundKeys, KeyMaterialLength, J0, S, 16, ComputedTag)
+
+	if not ConstantTimeCompare(Tag, ComputedTag) then
+		return false, nil
+	end
+
+	return true, OutputBuffer
+end
+
+return AES
 ]==], "@TAP/AES")()
 
 local hashlib = safeLoadstring([==[

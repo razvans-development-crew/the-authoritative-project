@@ -1,18 +1,13 @@
 import { Elysia } from "elysia";
 import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
-import { check_api_key, check_signature } from "../../security.ts";
+import { check_api_key } from "../../security.ts";
 import { LogLevel } from "@sapphire/framework";
 
 export function register_route(app: Elysia) {
   app.get("/api/v3/check-loader-key", async (context) => {
     if (!context.headers.Authorization || !await check_api_key(context.headers.Authorization)) {
       logger.write(LogLevel.Info, `Invalid API key: ${context.headers.Authorization}`);
-      return context.status(401);
-    }
-
-    if (!context.headers["X-TAP-Signature"] || !await check_signature(context.headers["X-TAP-Signature"])) {
-      logger.write(LogLevel.Info, `Invalid signature: ${context.headers["X-TAP-Signature"]}`);
       return context.status(401);
     }
 

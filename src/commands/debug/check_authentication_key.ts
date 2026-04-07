@@ -3,7 +3,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { check_api_key, check_signature } from "../../security.ts";
+import { check_api_key } from "../../security.ts";
 
 const preconditions = require("../../preconditions.ts");
 
@@ -26,19 +26,20 @@ export const command: Command = {
       return;
     }
 
-    const key = interaction.options.getString("key");
+    try {
+      const result = await check_api_key(interaction.options.getString("key") ?? "No key provided");
 
-    if (!key) {
-      await interaction.followUp({ content: '> No authentication key provided.' });
+      if (result === true) {
+        await interaction.followUp({ content: '> Test successful (API key verification): API key is valid' });
+        logger.write(LogLevel.Info, `Test successful (API key verification): API key is valid`);
+        return;
+      }
+    } catch (err) {
+      await interaction.followUp({ content: '> An error has occurred while checking the API key.' });
+      logger.write(LogLevel.Error, `Exception while checking API key: ${err}`);
+
       return;
     }
-
-    if (!await check_api_key(key)) {
-      await interaction.followUp({ content: '> Invalid authentication key.' });
-      return;
-    }
-
-    await interaction.followUp({ content: '> Authentication key is valid.' });
   }
 }
 

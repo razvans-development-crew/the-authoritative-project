@@ -58,7 +58,7 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
 
       let decrypted_key_without_signature = decrypted_api_key_to_check.split(":")[0] + ":" + decrypted_api_key_to_check.split(":")[1];
 
-      if (decrypted_api_key_to_check === decrypted_api_key_to_check_against) {
+      if (decrypted_key_without_signature === decrypted_api_key_to_check_against) {
         // key coming from the client should be the exact following: "DATE_TIME_STRING:SECRET_KEY:SIGNATURE_HASH"
         const signature = decrypted_api_key_to_check.split(":")[2];
 

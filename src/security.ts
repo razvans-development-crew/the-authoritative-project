@@ -61,8 +61,6 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
 
           logger.write(LogLevel.Info, "The specified API key didn't have a valid signature: " + encrypted_api_key);
         }
-
-        logger.write(LogLevel.Info, "The specified API key didn't match any of the valid decrypted API keys: " + encrypted_api_key);
       }
     }
 

@@ -14,7 +14,7 @@ export async function get_all_valid_api_keys(): Promise<string[]> {
   const api_keys: string[] = [];
 
   // "DATE_TIME_STRING:SECRET_KEY"
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 8000; i++) {
     const date_time_string = new Date().toISOString().slice(0, 19);
     const cipher = crypto.createCipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
 

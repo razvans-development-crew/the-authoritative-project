@@ -96,6 +96,7 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
       generated_at_unix_timestamp: await utc_string_to_unix_ms(
         decrypted_data_to_check.timestamp
       ),
+
       generated_at: decrypted_data_to_check.timestamp,
     }
   );

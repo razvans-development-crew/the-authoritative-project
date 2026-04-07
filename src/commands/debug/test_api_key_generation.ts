@@ -43,7 +43,7 @@ export const command: Command = {
     const check_as_expired = interaction.options.getBoolean("check-as-expired") ?? false;
     const invalid_signature = interaction.options.getBoolean("invalid-signature") ?? false;
 
-    const key = Date.now() + ":" + SECRET_KEY;
+    const key = new Date().toISOString().slice(0, 19) + ":" + SECRET_KEY;
 
     if (check_as_expired === true) { await new Promise(r => setTimeout(r, 8500)); }
 

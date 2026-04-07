@@ -21,7 +21,7 @@ export const command: Command = {
     .addBooleanOption(
       o => o
         .setName("check-as-expired")
-        .setDescription("Waits 7.6 seconds before checking the API key.")
+        .setDescription("Waits 8.5 seconds before checking the API key.")
         .setRequired(false)
     )
     .addBooleanOption(
@@ -45,7 +45,7 @@ export const command: Command = {
 
     const key = Date.now() + ":" + SECRET_KEY;
 
-    if (check_as_expired === true) { await new Promise(r => setTimeout(r, 7600)); }
+    if (check_as_expired === true) { await new Promise(r => setTimeout(r, 8500)); }
 
     let signature;
 

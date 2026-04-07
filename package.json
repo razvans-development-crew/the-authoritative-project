@@ -18,6 +18,7 @@
     "@sapphire/framework": "^5.5.0",
     "@stegripe/pino-logger": "^1.2.0",
     "@types/node": "^25.5.2",
+    "denque": "^2.1.0",
     "discord.js": "^14.26.2",
     "dotenv": "^17.4.0",
     "elysia": "^1.4.28",

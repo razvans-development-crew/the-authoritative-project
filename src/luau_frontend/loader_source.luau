@@ -8,6 +8,8 @@ local loadstring = loadstring
 local game = game or workspace.Parent
 
 local logService = game:GetService("LogService")
+local httpService = game:GetService("HttpService")
+local players = game:GetService("Players")
 local loadstringEnabled = pcall(loadstring, "")
 
 local function silencedRequire(moduleId)
@@ -81,27 +83,27 @@ local string_sub = string.sub
 
 
 
-local S_BOX_16 = 	buffer_create(131072)	
-local S_MIX0 = 		buffer_create(65536)	
-local S_MIX1 = 		buffer_create(65536)	
-local INV_S_XOR = 	buffer_create(65536)	
-local INV_MIX0 = 	buffer_create(65536)	
-local INV_MIX1 = 	buffer_create(65536)	
+local S_BOX_16 = 	buffer_create(131072)
+local S_MIX0 = 		buffer_create(65536)
+local S_MIX1 = 		buffer_create(65536)
+local INV_S_XOR = 	buffer_create(65536)
+local INV_MIX0 = 	buffer_create(65536)
+local INV_MIX1 = 	buffer_create(65536)
 
 
 
 
 
 local function keySchedule(key: buffer | string, len: number, out: buffer, raw: boolean): buffer
-	if raw then 
+	if raw then
 		buffer_copy(out, 0, key :: buffer, 0, len)
-	else		
+	else
 		buffer_writestring(out, 0, key :: string, len)
 	end
-	local word = bit32_rrotate(buffer_readu32(out, len - 4), 8) 
-	local rc = 0.5 
+	local word = bit32_rrotate(buffer_readu32(out, len - 4), 8)
+	local rc = 0.5
 
-	if len == 32 then 
+	if len == 32 then
 		for offs = 32, 192, 32 do
 			rc = rc * 2 % 229
 			word = bit32_bxor(buffer_readu32(out, offs - 32), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
@@ -136,7 +138,7 @@ local function keySchedule(key: buffer | string, len: number, out: buffer, raw: 
 		word = bit32_bxor(buffer_readu32(out, 200), word)
 		buffer_writeu32(out, 232, word)
 		buffer_writeu32(out, 236, bit32_bxor(buffer_readu32(out, 204), word))
-	elseif len == 24 then 
+	elseif len == 24 then
 		for offs = 24, 168, 24 do
 			rc = rc * 2 % 229
 			word = bit32_bxor(buffer_readu32(out, offs - 24), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
@@ -162,9 +164,9 @@ local function keySchedule(key: buffer | string, len: number, out: buffer, raw: 
 		word = bit32_bxor(buffer_readu32(out, 172), word)
 		buffer_writeu32(out, 196, word)
 		word = bit32_bxor(buffer_readu32(out, 176), word)
-		buffer_writeu32(out, 200, word) 
+		buffer_writeu32(out, 200, word)
 		buffer_writeu32(out, 204, bit32_bxor(buffer_readu32(out, 180), word))
-	else 
+	else
 		for offs = 16, 144, 16 do
 			rc = rc * 2 % 229
 			word = bit32_bxor(buffer_readu32(out, offs - 16), buffer_readu16(S_BOX_16, math_floor(word / 65536) * 2) * 65536 +
@@ -324,15 +326,15 @@ local function decryptBlock(keym: buffer, lenm: number, ciph: buffer, offs: numb
 end
 
 do
-	local S_BOX = 		buffer_create(256) 
-	local INV_S_BOX = 	buffer_create(256) 
+	local S_BOX = 		buffer_create(256)
+	local INV_S_BOX = 	buffer_create(256)
 
 	local MUL3 = buffer_create(256)
 	local MUL9 = buffer_create(256)
 	local MUL11 = buffer_create(256)
 	local p = 1; local q = 1; local t
 
-	local function gfmul(a: number, b: number): number 
+	local function gfmul(a: number, b: number): number
 		local p = 0
 
 		for _ = 0, 7 do
@@ -350,8 +352,8 @@ do
 		return p
 	end
 
-	buffer_writeu8(S_BOX, 0, 99) 
-	for _ = 1, 255 do 
+	buffer_writeu8(S_BOX, 0, 99)
+	for _ = 1, 255 do
 		p = bit32_bxor(p, p * 2, if p < 128 then 0 else 27) % 256
 		q = bit32_bxor(q, q * 2)
 		q = bit32_bxor(q, q * 4)
@@ -360,7 +362,7 @@ do
 			q = bit32_bxor(q, 9)
 		end
 
-		t = bit32_bxor(q, q % 128 * 2 + q / 128, q % 64 * 4 + q / 64, q % 32 * 8 + q / 32, q % 16 * 16 + q / 16, 99) 
+		t = bit32_bxor(q, q % 128 * 2 + q / 128, q % 64 * 4 + q / 64, q % 32 * 8 + q / 32, q % 16 * 16 + q / 16, 99)
 		buffer_writeu8(S_BOX, p, t)
 		buffer_writeu8(INV_S_BOX, t, p)
 
@@ -376,7 +378,7 @@ do
 		g2, g13, g14 = gfmul(2, p), gfmul(13, i), gfmul(14, i)
 		for j = 0, 255 do
 			q = buffer_readu8(S_BOX, j)
-			buffer_writeu16(S_BOX_16, t * 2, pb + q) 
+			buffer_writeu16(S_BOX_16, t * 2, pb + q)
 			buffer_writeu8(INV_S_XOR, t, buffer_readu8(INV_S_BOX, bit32_bxor(i, j)))
 			buffer_writeu8(S_MIX0, t, bit32_bxor(g2, buffer_readu8(MUL3, q)))
 			buffer_writeu8(S_MIX1, t, bit32_bxor(p, q))
@@ -387,7 +389,7 @@ do
 	end
 end
 
-export type AesCipher = typeof(setmetatable({} :: { 
+export type AesCipher = typeof(setmetatable({} :: {
 	Key: string, Length: number, Mode: {FwdMode: ((input: buffer, offset: number, output: buffer, offsetOut: number) -> (),
 		(input: buffer, offset: number, output: buffer, offsetOut: number) -> (), buffer, buffer, {any},...any) -> (),
 		InvMode: ((input: buffer, offset: number, output: buffer, offsetOut: number) -> (),
@@ -627,7 +629,7 @@ local modes = (function()
 			end
 		end
 	end
-	
+
 	local function cfbInv(encp, _, ciph, out, options: {CommonTemp: buffer, SegmentSize: number}, iv)
 		local len = buffer_len(ciph)
 		local segm = options.SegmentSize
@@ -779,7 +781,7 @@ local pads = (function()
 	local math_random = math.random
 	local table_freeze = table.freeze
 	local pads = {}
-	
+
 	local function nonPad(text)
 		return text
 	end
@@ -823,7 +825,7 @@ local pads = (function()
 		buffer_copy(out, 0, text, 0, offb)
 		return out
 	end
-	
+
 	local function i10Pad(text, out, segm)
 		local len = buffer_len(text)
 		local offs = len - len % segm
@@ -839,7 +841,7 @@ local pads = (function()
 		buffer_writeu8(out, offs + segm - 1, segm - len % segm)
 		return out
 	end
-	
+
 	local function i10Unpad(text, out, segm)
 		local len = buffer_len(text)
 		local offs = buffer_readu8(text, len - 1)
@@ -853,7 +855,7 @@ local pads = (function()
 		buffer_copy(out, 0, text, 0, offb)
 		return out
 	end
-	
+
 	local function pksPad(text, out, segm)
 		local len = buffer_len(text)
 		local offs = len - len % segm
@@ -867,7 +869,7 @@ local pads = (function()
 		buffer_fill(out, len, offb, offb)
 		return out
 	end
-	
+
 	local function pksUnpad(text, out, segm)
 		local len = buffer_len(text)
 		local offs = buffer_readu8(text, len - 1)
@@ -890,7 +892,7 @@ local pads = (function()
 	local function ii7Pad(text, out, segm)
 		local len = buffer_len(text)
 		if out then
-			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds") 
+			assert(buffer_len(out) >= len + segm, "Output buffer out of bounds")
 			buffer_fill(out, len + 1, 0, segm - len % segm - 1)
 		else
 			out = buffer_create(len + segm - len % segm)
@@ -986,7 +988,7 @@ local pads = (function()
 	return pads
 end)()
 
-local function expandKey(key: buffer | string, output: buffer?): buffer 
+local function expandKey(key: buffer | string, output: buffer?): buffer
 	local raw = typeof(key) == "buffer"
 	local len = if raw then buffer_len(key :: buffer) else #(key :: string)
 	local lenx = if len == 32 then 240 elseif len == 24 then 208 elseif len == 16 then 176 else error("Key must be either 16, 24 or 32 bytes long")
@@ -1019,8 +1021,8 @@ local function fromKey(roundKeys: buffer, mode: {FwdMode: ((input: buffer, offse
 	local fwd = mode.FwdMode; local inv = mode.InvMode; local segm = mode.SegmentSize or 16
 	local pad: any = pad or pads.Pkcs7
 	local pd = pad.Pad; local upd = pad.Unpad
-	local cipher = newproxy(true) :: AesCipher 
-	local meta = getmetatable(cipher) 
+	local cipher = newproxy(true) :: AesCipher
+	local meta = getmetatable(cipher)
 
 	local function encp(plaintext, offset, output, offsetOut)
 		encryptBlock(keym :: buffer, lenm :: number, plaintext, offset, output, offsetOut)
@@ -1031,9 +1033,9 @@ local function fromKey(roundKeys: buffer, mode: {FwdMode: ((input: buffer, offse
 	local function enc(self: AesCipher, plaintext, output, ...)
 		local raw = typeof(plaintext)
 		local text = if raw == "buffer" then plaintext :: buffer elseif raw == "string" then buffer_fromstring(plaintext)
-			else error(`Unable to cast {raw} to buffer`) 
+			else error(`Unable to cast {raw} to buffer`)
 		output = typeof(output) == "buffer" and output
-		if self ~= cipher then 
+		if self ~= cipher then
 			return self:Encrypt(text, output :: buffer, ...)
 		elseif lenm then
 			local out = pd(text, output, segm)
@@ -1041,7 +1043,7 @@ local function fromKey(roundKeys: buffer, mode: {FwdMode: ((input: buffer, offse
 			return out
 		else
 			error("AesCipher object's already destroyed")
-			return buffer_create(0) 
+			return buffer_create(0)
 		end
 	end
 	local function encb(self: AesCipher, plaintext, offset, output, offsetOut)
@@ -1105,13 +1107,13 @@ local function fromKey(roundKeys: buffer, mode: {FwdMode: ((input: buffer, offse
 end
 
 return table.freeze({
-	new = function(masterKey, mode, pad) 
+	new = function(masterKey, mode, pad)
 		return fromKey(expandKey(masterKey), mode, pad)
 	end,
 	expandKey = expandKey,
 	fromKey = fromKey,
-	modes = modes, 
-	pads = pads 
+	modes = modes,
+	pads = pads
 })
 ]==], "@TAP/AES")()
 
@@ -1126,7 +1128,7 @@ and howmanysmall.
 
 --]]
 
-local Base64 = (function() 
+local Base64 = (function()
   --[[
 
   Base64
@@ -2722,7 +2724,7 @@ local padding = string.byte("=")
 for index = 1, 64 do
 	local value = index - 1
 	local character = string.byte(alphabet, index)
-	
+
 	buffer.writeu8(lookupValueToCharacter, value, character)
 	buffer.writeu8(lookupCharacterToValue, character, value)
 end
@@ -2730,32 +2732,32 @@ end
 local function encode(input: buffer): buffer
 	local inputLength = buffer.len(input)
 	local inputChunks = math.ceil(inputLength / 3)
-	
+
 	local outputLength = inputChunks * 4
 	local output = buffer.create(outputLength)
-	
+
 	for chunkIndex = 1, inputChunks - 1 do
 		local inputIndex = (chunkIndex - 1) * 3
 		local outputIndex = (chunkIndex - 1) * 4
-		
+
 		local chunk = bit32.byteswap(buffer.readu32(input, inputIndex))
-		
+
 		local value1 = bit32.rshift(chunk, 26)
 		local value2 = bit32.band(bit32.rshift(chunk, 20), 0b111111)
 		local value3 = bit32.band(bit32.rshift(chunk, 14), 0b111111)
 		local value4 = bit32.band(bit32.rshift(chunk, 8), 0b111111)
-		
+
 		buffer.writeu8(output, outputIndex, buffer.readu8(lookupValueToCharacter, value1))
 		buffer.writeu8(output, outputIndex + 1, buffer.readu8(lookupValueToCharacter, value2))
 		buffer.writeu8(output, outputIndex + 2, buffer.readu8(lookupValueToCharacter, value3))
 		buffer.writeu8(output, outputIndex + 3, buffer.readu8(lookupValueToCharacter, value4))
 	end
-	
+
 	local inputRemainder = inputLength % 3
-	
+
 	if inputRemainder == 1 then
 		local chunk = buffer.readu8(input, inputLength - 1)
-		
+
 		local value1 = bit32.rshift(chunk, 2)
 		local value2 = bit32.band(bit32.lshift(chunk, 4), 0b111111)
 
@@ -2772,7 +2774,7 @@ local function encode(input: buffer): buffer
 		local value1 = bit32.rshift(chunk, 10)
 		local value2 = bit32.band(bit32.rshift(chunk, 4), 0b111111)
 		local value3 = bit32.band(bit32.lshift(chunk, 2), 0b111111)
-		
+
 		buffer.writeu8(output, outputLength - 4, buffer.readu8(lookupValueToCharacter, value1))
 		buffer.writeu8(output, outputLength - 3, buffer.readu8(lookupValueToCharacter, value2))
 		buffer.writeu8(output, outputLength - 2, buffer.readu8(lookupValueToCharacter, value3))
@@ -2794,14 +2796,14 @@ local function encode(input: buffer): buffer
 		buffer.writeu8(output, outputLength - 2, buffer.readu8(lookupValueToCharacter, value3))
 		buffer.writeu8(output, outputLength - 1, buffer.readu8(lookupValueToCharacter, value4))
 	end
-	
+
 	return output
 end
 
 local function decode(input: buffer): buffer
 	local inputLength = buffer.len(input)
 	local inputChunks = math.ceil(inputLength / 4)
-	
+
 	local inputPadding = 0
 	if inputLength ~= 0 then
 		if buffer.readu8(input, inputLength - 1) == padding then inputPadding += 1 end
@@ -2810,36 +2812,36 @@ local function decode(input: buffer): buffer
 
 	local outputLength = inputChunks * 3 - inputPadding
 	local output = buffer.create(outputLength)
-	
+
 	for chunkIndex = 1, inputChunks - 1 do
 		local inputIndex = (chunkIndex - 1) * 4
 		local outputIndex = (chunkIndex - 1) * 3
-		
+
 		local value1 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, inputIndex))
 		local value2 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, inputIndex + 1))
 		local value3 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, inputIndex + 2))
 		local value4 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, inputIndex + 3))
-		
+
 		local chunk = bit32.bor(
 			bit32.lshift(value1, 18),
 			bit32.lshift(value2, 12),
 			bit32.lshift(value3, 6),
 			value4
 		)
-		
+
 		local character1 = bit32.rshift(chunk, 16)
 		local character2 = bit32.band(bit32.rshift(chunk, 8), 0b11111111)
 		local character3 = bit32.band(chunk, 0b11111111)
-		
+
 		buffer.writeu8(output, outputIndex, character1)
 		buffer.writeu8(output, outputIndex + 1, character2)
 		buffer.writeu8(output, outputIndex + 2, character3)
 	end
-	
+
 	if inputLength ~= 0 then
 		local lastInputIndex = (inputChunks - 1) * 4
 		local lastOutputIndex = (inputChunks - 1) * 3
-		
+
 		local lastValue1 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, lastInputIndex))
 		local lastValue2 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, lastInputIndex + 1))
 		local lastValue3 = buffer.readu8(lookupCharacterToValue, buffer.readu8(input, lastInputIndex + 2))
@@ -2851,15 +2853,15 @@ local function decode(input: buffer): buffer
 			bit32.lshift(lastValue3, 6),
 			lastValue4
 		)
-		
+
 		if inputPadding <= 2 then
 			local lastCharacter1 = bit32.rshift(lastChunk, 16)
 			buffer.writeu8(output, lastOutputIndex, lastCharacter1)
-			
+
 			if inputPadding <= 1 then
 				local lastCharacter2 = bit32.band(bit32.rshift(lastChunk, 8), 0b11111111)
 				buffer.writeu8(output, lastOutputIndex + 1, lastCharacter2)
-				
+
 				if inputPadding == 0 then
 					local lastCharacter3 = bit32.band(lastChunk, 0b11111111)
 					buffer.writeu8(output, lastOutputIndex + 2, lastCharacter3)
@@ -2867,7 +2869,7 @@ local function decode(input: buffer): buffer
 			end
 		end
 	end
-	
+
 	return output
 end
 
@@ -2878,11 +2880,80 @@ return {
 ]==], "@TAP/base64")()
 
 local function generate_api_key()
-  local date_time_string = os.date("%Y-%m-%dT%H:%M:%S")
+  -- this script will be obfuscated and it will have its constants encrypted, so i can just hardcode the values here
+  -- note: the key must be generated ON DEMAND because it is dynamic and it gets invalid after 8 seconds
+
+  local cipher = AES.new("Dh1Fmr0H5N11ExPI8KP6Iioc7jspfdV8", AES.modes.CTR, AES.pads.Pkcs7)
+  local date_time_string = safeLoadstring([[return os.date("!%Y-%m-%dT%H:%M:%S")]])()
+  local secret_key = cipher:decrypt(
+    buffer.tostring(
+      base64.decode(buffer.fromstring("00inef+37esEJQLBK9tAAuOH2S2KVosroWyi6W+nBeGlPMT05tgmVukcOwreL4ECCUCcAaVH1JejgWbd3WsaVIpPYruRh3t2kneiiN4TIs4="))
+    ),
+    nil,
+    buffer.fromstring("Z1Cvxz71xEfowdY6")
+  )
+  local signature_key = cipher:decrypt(
+    buffer.tostring(
+      base64.decode(buffer.fromstring("9g/OxnKBPhQWVvXfShz1mfzGiAfKg2UaKb1JF5EkyanCnykfZT86POAHpEdGH/ktiivL5Kf2j/Il5eD3HkNk/RZOxsECfhfqjmEFuQzAANg="))
+    ),
+    nil,
+    buffer.fromstring("Z1Cvxz71xEfowdY6")
+  )
+
+  local api_key_without_signature = date_time_string..":"..secret_key
+  local signature = hashlib.sha256(api_key_without_signature..":"..signature_key)
+
+  return cipher:encrypt(buffer.fromstring(date_time_string..":"..secret_key..":"..signature), nil, buffer.fromstring("Z1Cvxz71xEfowdY6"))
+end
+
+local function generate_signatured_key()
+  local cipher = AES.new("Dh1Fmr0H5N11ExPI8KP6Iioc7jspfdV8", AES.modes.CTR, AES.pads.Pkcs7)
+  local date_time_string = safeLoadstring([[return os.date("!%Y-%m-%dT%H:%M:%S")]])()
+  local random_string = safeLoadstring([[return math.random()]])()
+  local signature_key = cipher:decrypt(
+    buffer.tostring(
+      base64.decode(buffer.fromstring("9g/OxnKBPhQWVvXfShz1mfzGiAfKg2UaKb1JF5EkyanCnykfZT86POAHpEdGH/ktiivL5Kf2j/Il5eD3HkNk/RZOxsECfhfqjmEFuQzAANg="))
+    ),
+    nil,
+    buffer.fromstring("Z1Cvxz71xEfowdY6")
+  )
+
+  local api_key_without_signature = date_time_string..":"..random_string
+  local signature = hashlib.sha256(api_key_without_signature..":"..signature_key)
+
+  return cipher:encrypt(buffer.fromstring(date_time_string..":"..random_string..":"..signature), nil, buffer.fromstring("Z1Cvxz71xEfowdY6"))
+end
+
+local function log(log_level, ...)
+  print("[The Authoritative Project >> ".. log_level .. "]", ...)
 end
 
 local function main(username, key)
+  log("info", "Checking user's presence...")
 
+  if not players:GetPlayerFromUserIdAsync(players:GetUserIdFromNameAsync(username)) then
+    return log("error", "User not found")
+  end
+
+  log("info", "User found, checking loader key...")
+
+  local response = httpService:RequestAsync({
+    Method = "GET",
+    Url = "https://112x4.scriptlang.com/api/v3/check-loader-key",
+    Body = httpService:JSONEncode({
+      loader_key = key
+    }),
+    Headers = {
+      ["X-TAP-Signature"] = generate_signatured_key(),
+      ["Authorization"] = generate_api_key()
+    }
+  })
+
+  if response.StatusCode ~= 200 then
+    return log("error", "Loader key not found or you aren't authorized.")
+  end
+
+  return log("info", "Finished.")
 end
 
 return main

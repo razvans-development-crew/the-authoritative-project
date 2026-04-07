@@ -1,14 +1,11 @@
 import { Elysia } from "elysia";
 import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
-import Denque from "denque";
 import { check_api_key, check_signature } from "../../security.ts";
 import { LogLevel } from "@sapphire/framework";
 
-const request_queue = registry.request_queue
-
 export function register_route(app: Elysia) {
-  app.get("/api/v3/poll", async (context) => {
+  app.get("/api/v3/check-loader-key", async (context) => {
     if (!context.headers.Authorization || !await check_api_key(context.headers.Authorization)) {
       logger.write(LogLevel.Info, `Invalid API key: ${context.headers.Authorization}`);
       return context.status(401);
@@ -19,23 +16,20 @@ export function register_route(app: Elysia) {
       return context.status(401);
     }
 
-    const TIMEOUT = 90 / 1000; // 90 seconds
+    const loader_key = (await context.request.body?.json()).loader_key;
 
-    return new Promise((resolve) => {
-      const start = Date.now();
+    if (!loader_key) {
+      logger.write(LogLevel.Info, `No loader key provided`);
+      return context.status(400);
+    }
 
-      const try_send = () => {
-        if (!request_queue.isEmpty()) {
-          const event = request_queue.shift();
-          resolve({ event });
-        } else if (Date.now() - start > TIMEOUT) {
-          resolve({ event: null })
-        } else {
-          setTimeout(try_send, 10)
-        }
+    for (const loader_key_from_reg of registry.generated_keys) {
+      if (loader_key_from_reg === loader_key) {
+        logger.write(LogLevel.Info, `Loader key found in the registry`);
+        return context.status(200);
       }
+    }
 
-      try_send();
-    })
+    return context.status(404);
   })
 }

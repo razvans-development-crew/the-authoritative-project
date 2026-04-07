@@ -43,7 +43,7 @@ export const command: Command = {
     const check_as_expired = interaction.options.getBoolean("check-as-expired") ?? false;
     const invalid_signature = interaction.options.getBoolean("invalid-signature") ?? false;
 
-    const key = new Date().toISOString().slice(0, 19) + ":" + SECRET_KEY;
+    const key = new Date().toISOString().slice(0, 19) + "|" + SECRET_KEY;
 
     if (check_as_expired === true) { await new Promise(r => setTimeout(r, 8500)); }
 
@@ -55,7 +55,7 @@ export const command: Command = {
       signature = await sign(key, SIGNATURE_KEY);
     }
 
-    const signed_key = key + ":" + signature;
+    const signed_key = key + "|" + signature;
     const encrypted_key = await encrypt(signed_key, AES_ENCRYPTION_KEY);
 
     logger.write(LogLevel.Info, `Generated API key: ${encrypted_key}`);

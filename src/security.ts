@@ -42,10 +42,10 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
   const decrypted_data_to_check = {
     // formatted UTC string (%Y-%m-%dT%H:%M:%S)
     // converted to unix timestamp in milliseconds
-    timestamp: decrypted_api_key_to_check.split(":")[0],
+    timestamp: decrypted_api_key_to_check.split("|")[0],
 
-    secret_key: decrypted_api_key_to_check.split(":")[1],
-    signature: decrypted_api_key_to_check.split(":")[2]
+    secret_key: decrypted_api_key_to_check.split("|")[1],
+    signature: decrypted_api_key_to_check.split("|")[2]
   }
 
   if (

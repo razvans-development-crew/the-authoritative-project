@@ -1,7 +1,6 @@
 import { Elysia } from "elysia";
 import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
-import Denque from "denque";
 import { check_api_key, check_signature } from "../../security.ts";
 import { LogLevel } from "@sapphire/framework";
 

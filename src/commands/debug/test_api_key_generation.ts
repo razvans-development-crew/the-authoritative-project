@@ -4,8 +4,14 @@ import { registry } from "../../registry.ts";
 import { logger } from "../../logging.ts";
 import { LogLevel } from "@sapphire/framework";
 import { get_all_valid_api_keys, check_api_key, check_signature } from "../../security.ts";
+import crypto from "crypto";
+import { get_env_variable } from "../../env_variables.ts";
 
 const preconditions = require("../../preconditions.ts");
+
+const AES_ENCRYPTION_KEY = await get_env_variable("AES_ENCRYPTION_KEY");               // 256-bit (32-byte) key
+const AES_INITIALIZATION_VECTOR = await get_env_variable("AES_INITIALIZATION_VECTOR"); // 16-byte initialization vector
+const SIGNATURE_KEY = await get_env_variable("SIGNATURE_KEY");                         // 512-bit (64-byte) key
 
 export const command: Command = {
   data: new SlashCommandBuilder()
@@ -32,7 +38,22 @@ export const command: Command = {
       return;
     }
 
-    const is_api_key_valid = await check_api_key(api_key);
+    // sign the API key
+    let signed_encrypted_api_key;
+
+    {
+      const decipher = crypto.createDecipheriv("aes-256-ctr", AES_ENCRYPTION_KEY, AES_INITIALIZATION_VECTOR);
+      let decrypted_api_key_to_check = decipher.update(Buffer.from(api_key, "base64").toString("utf8"), "hex", "utf8");
+      decrypted_api_key_to_check += decipher.final("utf8");
+
+      let decrypted_key_without_signature = decrypted_api_key_to_check.split(":")[0] + ":" + decrypted_api_key_to_check.split(":")[1];
+
+      const signature = crypto.createHash("sha256").update(decrypted_key_without_signature + ":" + SIGNATURE_KEY).digest("hex");
+
+      signed_encrypted_api_key = Buffer.from(decrypted_api_key_to_check + ":" + signature).toString("base64");
+    }
+
+    const is_api_key_valid = await check_api_key(signed_encrypted_api_key);
 
     if (is_api_key_valid) {
       await interaction.followUp({ content: '> Test successful: API key is valid.' });

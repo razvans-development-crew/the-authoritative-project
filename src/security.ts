@@ -60,13 +60,9 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
             logger.write(LogLevel.Info, "A valid API key was provided. API key: " + encrypted_api_key);
             return true;
           }
-
-          logger.write(LogLevel.Info, "The specified API key didn't have a valid signature: " + encrypted_api_key);
         }
       }
     }
-
-    logger.write(LogLevel.Info, "The specified API key didn't match any of the valid encrypted API keys: " + encrypted_api_key);
   }
 
   logger.write(LogLevel.Info, "An invalid API key was provided. API key: " + encrypted_api_key);

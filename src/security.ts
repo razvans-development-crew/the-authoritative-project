@@ -85,6 +85,23 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
     return false;
   }
 
+  logger.write(
+    LogLevel.Info,
+    `Valid API key (lasted for ${await utc_string_to_unix_ms(
+      decrypted_data_to_check.timestamp
+    ) - new Date().getTime()} milliseconds): ${encrypted_api_key}`,
+    {
+      lasted_for: await utc_string_to_unix_ms(
+        decrypted_data_to_check.timestamp
+      ) - new Date().getTime(),
+
+      generated_at_unix_timestamp: await utc_string_to_unix_ms(
+        decrypted_data_to_check.timestamp
+      ),
+      generated_at: decrypted_data_to_check.timestamp,
+    }
+  );
+
   const expected_signature = await sign(
     decrypted_data_to_check.timestamp
     + ":"

@@ -47,6 +47,7 @@ export async function register_commands(
                 .setName(option.name)
                 .setDescription(option.description || "No description")
                 .setRequired(option.required ?? false)
+                .addChoices(option.choices ?? [])
               );
               break;
             case ApplicationCommandOptionType.Integer:

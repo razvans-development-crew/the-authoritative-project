@@ -1,14 +1,24 @@
 import Denque from "denque";
 
-interface GeneratedKey {
+export interface GeneratedKey {
   loader_key: string,
   unix_timestamp: number,
   roblox_user_id: string,
 }
 
-interface Registry {
+export interface Session {
+  session_id: string,
+  discord_channel_id: string,
+  logs: Array<string>,
+  stopped: boolean,
+  unix_timestamp: number,
+  job_id: string,
+  session_name: string
+}
+
+export interface Registry {
   generated_keys: Array<GeneratedKey>,
-  active_sessions: Array<any>, // i decide later
+  active_sessions: Array<Session>,
 
   // long poll
   request_queue: Denque<any>,

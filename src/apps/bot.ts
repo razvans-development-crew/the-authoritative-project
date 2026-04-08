@@ -10,7 +10,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const commands_path = path.join(import.meta.dir, "commands");
 const commands = await load_commands(commands_path);
-const database = require("./utilities/database.ts");
+const database = require("../utilities/database.ts");
 const TOKEN = await get_env_variable("TOKEN")!;
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
 const {

@@ -3,7 +3,7 @@ import { logger } from "./utilities/logging.ts";
 import { run_bot } from "./apps/bot.ts";
 import { LogLevel } from "@sapphire/framework";
 
-const database = require("./utilities/database.ts");
+const database = require("../utilities/database.ts");
 
 async function main() {
   await run_backend_server().catch((err) => {

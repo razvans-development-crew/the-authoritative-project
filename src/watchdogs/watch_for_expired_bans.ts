@@ -2,7 +2,7 @@ import { logger } from "../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 import { get_expired_bans, get_expired_group_bans } from "../utilities/database.ts";
 
-const database = require("./utilities/database.ts");
+const database = require("../utilities/database.ts");
 
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));

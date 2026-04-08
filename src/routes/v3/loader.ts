@@ -21,22 +21,18 @@ export function register_route(app: Elysia) {
 
     if (!loader_key) {
       logger.write(LogLevel.Info, `No loader key provided`);
-      return context.status(400);
+      return context.status(401);
     }
 
     for (const loader_key_from_reg of registry.generated_keys) {
       if (loader_key_from_reg.loader_key === loader_key) {
-        logger.write(LogLevel.Info, `Loader key found in the registry: ${loader_key}`);
-        logger.write(LogLevel.Info, "Checking if it is expired...");
-
         if ((new Date().getTime() - loader_key_from_reg.unix_timestamp) >= 25000) {
-          logger.write(LogLevel.Info, `Loader key is expired`);
           return context.status(401);
         }
-
-        logger.write(LogLevel.Info, `Loader key is valid`);
       }
     }
+
+    context.set.headers["content-type"] = "text/plain";
 
     const obfuscated_loader = await readFile("../../luau_frontend/loader_obfed.luau", "utf-8");
     return obfuscated_loader

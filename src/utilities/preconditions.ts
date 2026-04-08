@@ -1,5 +1,5 @@
-const env_variables = require("./env_variables.ts");
-const database = require("./database.ts");
+const env_variables = require("./utitlities/env_variables.ts");
+const database = require("./utilities/database.ts");
 
 export async function is_dc_user_id_owner(to_check: string): Promise<boolean> {
   return (await env_variables.get_env_variable("OWNER") == to_check)

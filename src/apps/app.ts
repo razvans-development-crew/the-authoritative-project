@@ -3,7 +3,7 @@ import { load_routes } from "../loaders/route_loader.ts";
 import { logger } from "@bogeychan/elysia-logger";
 import { join } from "path";
 
-const env_variables = require("./env_variables.ts");
+const env_variables = require("./utilities/env_variables.ts");
 const app = new Elysia({
   aot: true,
   precompile: true,

@@ -1,9 +1,9 @@
 import { type Command } from "../../types/Command";
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
-import { registry } from "../../registry.ts";
-import { logger } from "../../logging.ts";
+import { registry } from "../../utilities/registry.ts";
+import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { check_api_key } from "../../security.ts";
+import { check_api_key } from "../../utilities/security.ts";
 
 const preconditions = require("../../preconditions.ts");
 

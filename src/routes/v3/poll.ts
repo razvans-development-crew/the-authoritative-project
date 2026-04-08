@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import { registry } from "../../registry.ts";
-import { logger } from "../../logging.ts";
-import { check_api_key } from "../../security.ts";
+import { registry } from "../../utilities/registry.ts";
+import { logger } from "../../utilities/logging.ts";
+import { check_api_key } from "../../utilities/security.ts";
 import { LogLevel } from "@sapphire/framework";
 
 const request_queue = registry.request_queue

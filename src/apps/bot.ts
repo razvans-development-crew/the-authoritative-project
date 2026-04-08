@@ -1,10 +1,10 @@
-import { logger } from "./logging.ts";
-import { get_env_variable } from "./env_variables.ts";
+import { logger } from "../utilities/logging.ts";
+import { get_env_variable } from "../utilities/env_variables.ts";
 import { UserFlagsBitField, type BaseInteraction, type CommandInteraction, type Interaction, type InteractionResponse } from "discord.js";
-import { load_commands } from "./command_loader.ts";
-import { register_commands } from "./register_commands.ts";
+import { load_commands } from "../loaders/command_loader.ts";
+import { register_commands } from "../loaders/register_commands.ts";
 import { LogLevel } from "@sapphire/framework";
-import { watch_for_expired_bans } from "./watch_for_expired_bans.ts";
+import { watch_for_expired_bans } from "../watchdogs/watch_for_expired_bans.ts";
 
 const fs = require('node:fs');
 const path = require('node:path');

@@ -1,6 +1,6 @@
-import { logger } from "./logging.ts";
+import { logger } from "../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { get_expired_bans, get_expired_group_bans } from "./database.ts";
+import { get_expired_bans, get_expired_group_bans } from "../utilities/database.ts";
 
 const database = require("./database.ts");
 

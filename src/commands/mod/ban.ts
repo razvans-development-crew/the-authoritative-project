@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from "discord.js";
 import { type Command } from "../../types/Command.ts";
-import { logger } from "../../logging.ts";
+import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { is_dc_user_id_capable_to_ban_groups } from "../../preconditions.ts";
+import { is_dc_user_id_capable_to_ban_groups } from "../../utilities/preconditions.ts";
 
 const database = require("../../database.ts");
 const rozod_client = require("../../rozod_client.ts");

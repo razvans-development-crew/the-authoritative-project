@@ -1,10 +1,14 @@
 import { Elysia } from "elysia";
-import { load_routes } from "./route_loader.ts";
+import { load_routes } from "../loaders/route_loader.ts";
 import { logger } from "@bogeychan/elysia-logger";
 import { join } from "path";
 
 const env_variables = require("./env_variables.ts");
-const app = new Elysia();
+const app = new Elysia({
+  aot: true,
+  precompile: true,
+  nativeStaticResponse: true,
+});
 
 await load_routes(app, join(import.meta.dir, "routes"));
 

@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from "fs";
 import { join, relative, parse } from "path";
 import { Elysia } from "elysia";
-import { logger } from "./logging.ts";
+import { logger } from "../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 
 export async function load_routes(app: Elysia, routes_dir: string) {

@@ -1,6 +1,6 @@
 import { REST, Routes } from "discord.js";
-import type { Command } from "./types/Command";
-import { logger } from "./logging";
+import type { Command } from "../types/Command";
+import { logger } from "../utilities/logging";
 import { LogLevel } from "@sapphire/framework";
 import { SlashCommandBuilder } from "discord.js";
 import { ApplicationCommandOptionType } from "discord.js";

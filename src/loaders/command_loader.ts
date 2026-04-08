@@ -1,8 +1,8 @@
 import { pathToFileURL } from "url";
 import { readdir } from "fs/promises";
 import path from "path";
-import { type Command } from "./types/Command.ts";
-import { logger } from "./logging.ts";
+import { type Command } from "../types/Command.ts";
+import { logger } from "../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 
 export async function load_commands(dir: string): Promise<Map<string, Command>> {

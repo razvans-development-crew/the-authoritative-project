@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from "discord.js";
 import { type Command } from "../../types/Command.ts";
-import { logger } from "../../logging.ts";
+import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 
 const database = require("../../database.ts");

@@ -1,6 +1,6 @@
-import { run_backend_server } from "./app.ts";
-import { logger } from "./logging.ts";
-import { run_bot } from "./bot.ts";
+import { run_backend_server } from "./apps/app.ts";
+import { logger } from "./utilities/logging.ts";
+import { run_bot } from "./apps/bot.ts";
 import { LogLevel } from "@sapphire/framework";
 
 const database = require("./database.ts");

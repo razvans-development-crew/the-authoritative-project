@@ -1,10 +1,10 @@
 import { type Command } from "../../types/Command";
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
-import { registry, type GeneratedKey } from "../../registry.ts";
-import { logger } from "../../logging.ts";
+import { registry, type GeneratedKey } from "../../utilities/registry.ts";
+import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { generate_random_string } from "../../helpers.ts";
-import { get_env_variable } from "../../env_variables.ts";
+import { generate_random_string } from "../../utilities/helpers.ts";
+import { get_env_variable } from "../../utilities/env_variables.ts";
 
 const preconditions = require("../../preconditions.ts");
 const database = require("../../database.ts");

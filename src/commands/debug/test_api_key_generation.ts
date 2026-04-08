@@ -1,12 +1,12 @@
 import { type Command } from "../../types/Command";
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
-import { registry } from "../../registry.ts";
-import { logger } from "../../logging.ts";
+import { registry } from "../../utilities/registry.ts";
+import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { check_api_key } from "../../security.ts";
-import { encrypt, sign } from "../../crypto_helpers.ts";
+import { check_api_key } from "../../utilities/security.ts";
+import { encrypt, sign } from "../../utilities/crypto_helpers.ts";
 import crypto from "crypto";
-import { get_env_variable } from "../../env_variables.ts";
+import { get_env_variable } from "../../utilities/env_variables.ts";
 
 const preconditions = require("../../preconditions.ts");
 

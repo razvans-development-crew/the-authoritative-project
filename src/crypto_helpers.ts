@@ -6,12 +6,10 @@ export const IV_LENGTH = 12; // recommended length for AES-GCM
 export const TAG_LENGTH = 16;
 
 export async function encrypt(plaintext: string, key: string): Promise<string> {
-  const key_buffer = Buffer.from(key, "hex");
-
-  if (key_buffer.length !== KEY_LENGTH) throw new Error("Key must be 32 bytes long");
+  if (key.length !== KEY_LENGTH) throw new Error("Key must be 32 bytes long");
 
   const initialization_vector = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(AES_MODE, key_buffer, initialization_vector);
+  const cipher = crypto.createCipheriv(AES_MODE, key, initialization_vector);
   const encrypted = Buffer.concat([
     cipher.update(plaintext, "utf8"),
     cipher.final()
@@ -23,9 +21,7 @@ export async function encrypt(plaintext: string, key: string): Promise<string> {
 }
 
 export async function decrypt(payload: string, key: string): Promise<string> {
-  const key_buffer = Buffer.from(key, "hex");
-
-  if (key_buffer.length !== KEY_LENGTH) throw new Error("Key must be 32 bytes long");
+  if (key.length !== KEY_LENGTH) throw new Error("Key must be 32 bytes long");
 
   const data = Buffer.from(payload, "base64");
 
@@ -33,7 +29,7 @@ export async function decrypt(payload: string, key: string): Promise<string> {
   const tag = data.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
   const encrypted = data.subarray(IV_LENGTH + TAG_LENGTH);
 
-  const decipher = crypto.createDecipheriv(AES_MODE, key_buffer, iv);
+  const decipher = crypto.createDecipheriv(AES_MODE, key, iv);
   decipher.setAuthTag(tag);
 
   const decrypted = Buffer.concat([
@@ -64,9 +60,7 @@ export async function decrypt_luau_string(payload: string, key: string): Promise
     end
   */
 
-  const key_buffer = Buffer.from(key, "hex");
-
-  if (key_buffer.length !== KEY_LENGTH) throw new Error("Key must be 32 bytes long");
+  if (key.length !== KEY_LENGTH) throw new Error("Key must be 32 bytes long");
 
   const data = Buffer.from(payload, "base64");
 
@@ -74,7 +68,7 @@ export async function decrypt_luau_string(payload: string, key: string): Promise
   const tag = data.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
   const ciphertext = data.subarray(IV_LENGTH + TAG_LENGTH);
 
-  const decipher = crypto.createDecipheriv(AES_MODE, key_buffer, iv);
+  const decipher = crypto.createDecipheriv(AES_MODE, key, iv);
   decipher.setAuthTag(tag);
 
   const decrypted = Buffer.concat([

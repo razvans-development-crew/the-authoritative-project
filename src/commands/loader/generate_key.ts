@@ -41,7 +41,7 @@ export const command: Command = {
     });
 
     const key: GeneratedKey = {
-      loader_key: await generate_random_string(32),
+      loader_key: await generate_random_string(24),
       unix_timestamp: Date.now(),
       roblox_user_id: whitelist_info?.roblox_user_id ?? ""
     };

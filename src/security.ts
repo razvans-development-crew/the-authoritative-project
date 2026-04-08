@@ -7,10 +7,9 @@ import {
   sign
 } from "./crypto_helpers.ts";
 
-const AES_ENCRYPTION_KEY = await get_env_variable("AES_ENCRYPTION_KEY");               // 256-bit (32-byte) key
-// const AES_INITIALIZATION_VECTOR = await get_env_variable("AES_INITIALIZATION_VECTOR"); // 16-byte initialization vector (static IVs are not secure)
-const SECRET_KEY = await get_env_variable("SECRET_KEY");                               // 512-bit (64-byte) key
-const SIGNATURE_KEY = await get_env_variable("SIGNATURE_KEY");                         // 512-bit (64-byte) key
+const AES_ENCRYPTION_KEY = await get_env_variable("AES_ENCRYPTION_KEY"); // 256-bit (32-byte) key
+const SECRET_KEY = await get_env_variable("SECRET_KEY");                 // 512-bit (64-byte) key
+const SIGNATURE_KEY = await get_env_variable("SIGNATURE_KEY");           // 512-bit (64-byte) key
 
 async function utc_string_to_unix_ms(utc_string: string): Promise<number> {
   const dt = new Date(utc_string + "Z");
@@ -34,10 +33,17 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
   // the key should look something like this:
   // timestamp:secret_key:signature
 
+  let decrypted_api_key_to_check;
 
-  const decrypted_api_key_to_check = await decrypt(
-    encrypted_api_key, AES_ENCRYPTION_KEY
-  );
+  try {
+    decrypted_api_key_to_check = await decrypt(
+      encrypted_api_key,
+      AES_ENCRYPTION_KEY
+    );
+  } catch (error) {
+    logger.write(LogLevel.Info, `Invalid API key (decryption failed): ${encrypted_api_key}`);
+    return false;
+  }
 
   const decrypted_data_to_check = {
     // formatted UTC string (%Y-%m-%dT%H:%M:%S)
@@ -71,11 +77,11 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
   if (
     (new Date().getTime() - await utc_string_to_unix_ms(
       decrypted_data_to_check.timestamp
-    )) >= 3500
+    )) >= 8500
   ) {
     logger.write(
       LogLevel.Info, `
-      Invalid API key (lasted for more than 3.5 seconds): ${encrypted_api_key}`,
+      Invalid API key (lasted for more than 8.5 seconds): ${encrypted_api_key}`,
       {
         lasted_for: new Date().getTime() - await utc_string_to_unix_ms(
           decrypted_data_to_check.timestamp
@@ -85,9 +91,21 @@ export async function check_api_key(encrypted_api_key: string): Promise<boolean>
     return false;
   }
 
+  if (decrypted_data_to_check.secret_key !== SECRET_KEY) {
+    logger.write(
+      LogLevel.Info,
+      `Invalid API key (secret key mismatch): ${encrypted_api_key}`,
+      {
+        expected_secret_key: SECRET_KEY,
+        actual_secret_key: decrypted_data_to_check.secret_key
+      }
+    );
+    return false;
+  }
+
   const expected_signature = await sign(
     decrypted_data_to_check.timestamp
-    + ":"
+    + "|"
     + decrypted_data_to_check.secret_key,
     SIGNATURE_KEY
   );

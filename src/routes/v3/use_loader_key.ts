@@ -13,7 +13,6 @@ export function register_route(app: Elysia) {
     }
 
     const ip =
-      context.request.headers.get("x-forwarded-for") ??
       context.server?.requestIP?.(context.request)?.address ??
       'unknown';
 

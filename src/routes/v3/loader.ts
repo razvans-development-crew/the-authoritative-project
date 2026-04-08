@@ -17,7 +17,7 @@ export function register_route(app: Elysia) {
       return context.status(401);
     }
 
-    const loader_key = (await context.request.body?.json()).loader_key;
+    const loader_key = context.request.headers?.get("X-Loader-Key");
 
     if (!loader_key) {
       logger.write(LogLevel.Info, `No loader key provided`);

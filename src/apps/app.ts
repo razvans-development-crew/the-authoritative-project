@@ -10,7 +10,7 @@ const app = new Elysia({
   nativeStaticResponse: true,
 });
 
-await load_routes(app, join(import.meta.dir, "routes"));
+await load_routes(app, join(import.meta.dir, "../routes"));
 
 export async function run_backend_server(): Promise<void> {
   app.use(logger({

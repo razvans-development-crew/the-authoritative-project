@@ -8,7 +8,7 @@ import { encrypt, sign } from "../../utilities/crypto_helpers.ts";
 import crypto from "crypto";
 import { get_env_variable } from "../../utilities/env_variables.ts";
 
-const preconditions = require("../../preconditions.ts");
+const preconditions = require("../../utilities/preconditions.ts");
 
 const AES_ENCRYPTION_KEY = await get_env_variable("AES_ENCRYPTION_KEY");
 const SECRET_KEY = await get_env_variable("SECRET_KEY");

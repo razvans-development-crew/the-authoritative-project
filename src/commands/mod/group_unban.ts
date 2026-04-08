@@ -3,9 +3,9 @@ import { type Command } from "../../types/Command.ts";
 import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 
-const database = require("../../database.ts");
-const rozod_client = require("../../rozod_client.ts");
-const preconditions = require("../../preconditions.ts");
+const database = require("../../utilities/database.ts");
+const rozod_client = require("../../utilities/rozod_client.ts");
+const preconditions = require("../../utilities/preconditions.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()

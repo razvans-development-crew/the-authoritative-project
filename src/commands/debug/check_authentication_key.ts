@@ -5,7 +5,7 @@ import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 import { check_api_key } from "../../utilities/security.ts";
 
-const preconditions = require("../../preconditions.ts");
+const preconditions = require("../../utilities/preconditions.ts");
 
 export const command: Command = {
   data: new SlashCommandBuilder()

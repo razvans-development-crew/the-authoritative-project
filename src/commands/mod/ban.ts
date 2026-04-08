@@ -4,9 +4,9 @@ import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 import { is_dc_user_id_capable_to_ban_groups } from "../../utilities/preconditions.ts";
 
-const database = require("../../database.ts");
-const rozod_client = require("../../rozod_client.ts");
-const preconditions = require("../../preconditions.ts");
+const database = require("../../utilities/database.ts");
+const rozod_client = require("../../utilities/rozod_client.ts");
+const preconditions = require("../../utilities/preconditions.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()

@@ -6,8 +6,8 @@ import { LogLevel } from "@sapphire/framework";
 import { generate_random_string } from "../../utilities/helpers.ts";
 import { get_env_variable } from "../../utilities/env_variables.ts";
 
-const preconditions = require("../../preconditions.ts");
-const database = require("../../database.ts");
+const preconditions = require("../../utilities/preconditions.ts");
+const database = require("../../utilities/database.ts");
 
 export const command: Command = {
   data: new SlashCommandBuilder()

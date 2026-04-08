@@ -2,7 +2,7 @@ import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} f
 import { type Command } from "../../types/Command.ts";
 import { exec } from "node:child_process";
 
-const preconditions = require("../../preconditions.ts");
+const preconditions = require("../../utilities/preconditions.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from "discord.js";
 import { type Command } from "../../types/Command.ts";
 
-const preconditions = require("../../preconditions.ts");
+const preconditions = require("../../utilities/preconditions.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()

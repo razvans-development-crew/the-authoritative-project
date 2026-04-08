@@ -4,8 +4,8 @@ import {
 } from "discord.js";
 import { type Command } from "../../types/Command.ts";
 
-const database = require("../../database.ts");
-const rozod_client = require("../../rozod_client.ts");
+const database = require("../../utilities/database.ts");
+const rozod_client = require("../../utilities/rozod_client.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()

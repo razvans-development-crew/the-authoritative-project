@@ -107,10 +107,11 @@ export const CHARACTER_ARRAY = [
 ]
 
 export async function generate_random_string(length: number): Promise<string> {
-  const characters = CHARACTER_ARRAY.slice(0, length);
-  const result = await Promise.all(characters.map(async (character) => {
-    const random = Math.floor(Math.random() * character.length);
-    return character.charAt(random);
-  }));
-  return result.join("");
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    result += CHARACTER_ARRAY[Math.floor(Math.random() * CHARACTER_ARRAY.length)];
+  }
+
+  return result;
 }

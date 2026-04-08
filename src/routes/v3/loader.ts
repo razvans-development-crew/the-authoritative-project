@@ -14,20 +14,20 @@ export function register_route(app: Elysia) {
 
     if (!await is_ip_from_roblox(ip)) {
       logger.write(LogLevel.Info, `IP is not from Roblox: ${ip}`);
-      return context.status(401);
+      return context.status(401, "IP is not from Roblox");
     }
 
     const loader_key = context.request.headers?.get("X-Loader-Key");
 
     if (!loader_key) {
       logger.write(LogLevel.Info, `No loader key provided`);
-      return context.status(401);
+      return context.status(401, "No key provided");
     }
 
     for (const loader_key_from_reg of registry.generated_keys) {
       if (loader_key_from_reg.loader_key === loader_key) {
         if ((new Date().getTime() - loader_key_from_reg.unix_timestamp) >= 25000) {
-          return context.status(401);
+          return context.status(401, "Loader key is expired");
         }
       }
     }

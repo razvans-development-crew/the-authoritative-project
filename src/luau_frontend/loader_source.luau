@@ -3962,7 +3962,7 @@ local function random_bytes(length: number): string
 end
 
 local function sign(data: string, key: string)
-  local hash_string, _ = HMAC(data, key, HMAC_SHA256, 64)
+  local hash_string, _ = HMAC(data, key, HMAC_SHA256.SHA256, 64)
   return hash_string
 end
 

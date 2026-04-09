@@ -31,7 +31,7 @@ export async function run_backend_server(): Promise<void> {
   // }));
 
   app.onAfterResponse(async (context) => {
-    utils_logger.write(LogLevel.Info, `(Outgoing response) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
+    utils_logger.write(LogLevel.Info, `(Outgoing Response) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
   });
 
   app.onRequest(async (context) => {

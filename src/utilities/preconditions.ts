@@ -1,6 +1,9 @@
 const env_variables = require("./env_variables.ts");
 const database = require("./database.ts");
 
+import { logger } from "./logging.ts";
+import { LogLevel } from "@sapphire/framework";
+
 export async function is_dc_user_id_owner(to_check: string): Promise<boolean> {
   return (await env_variables.get_env_variable("OWNER") == to_check)
 }
@@ -89,10 +92,12 @@ export async function is_ip_from_roblox(ip: string): Promise<boolean> {
   // }
 
   if (org == "Roblox" || !(org.toLowerCase().includes("roblox"))) {
+    logger.write(LogLevel.Info, `IP is not from Roblox (organization mismatch): ${ip}`);
     return false;
   }
 
   if (!(COUNTRY_CODES.find(code => code === country_code))) {
+    logger.write(LogLevel.Info, `IP is not from Roblox (country code mismatch): ${ip}`);
     return false;
   }
 
@@ -104,6 +109,7 @@ export async function is_ip_from_roblox(ip: string): Promise<boolean> {
     || !(asn.toLowerCase().includes("AS11281 Roblox".toLowerCase()))
     || !(asn.toLowerCase().includes("AS136766".toLowerCase()))
   ) {
+    logger.write(LogLevel.Info, `IP is not from Roblox (ASN mismatch): ${ip}`);
     return false
   }
 

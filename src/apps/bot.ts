@@ -126,5 +126,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 });
 
 export async function run_bot(): Promise<void> {
+  logger.write(LogLevel.Info, "Starting Discord bot...");
+
   client.login(await get_env_variable("TOKEN"));
 }

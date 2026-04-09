@@ -16,6 +16,8 @@ const app = new Elysia({
 await load_routes(app, join(import.meta.dir, "../routes"));
 
 export async function run_backend_server(): Promise<void> {
+  utils_logger.write(LogLevel.Info, "Starting backend server...");
+
   // app.use(logger({
   //   level: "debug",
   //   formatters: {

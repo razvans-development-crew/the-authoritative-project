@@ -49,11 +49,11 @@ export const command: Command = {
     registry.generated_keys.push(key);
 
     if (key_type == "3") {
-      await interaction.followUp("> ```lua\n> -- This key expires in 25 seconds.\n> require(" + await get_env_variable("LOADER_ASSET_ID") + ")(\'" + whitelist_info.rx_user_name + "\', \'" + key.loader_key + "\')\n> ```");
+      await interaction.followUp("> ```lua\n> require(" + await get_env_variable("LOADER_ASSET_ID") + ")(\'" + whitelist_info.rx_user_name + "\', \'" + key.loader_key + "\')\n> -- This key expires in 25 seconds.\n> ```");
     } else if (key_type == "2") {
-      await interaction.followUp("> ```lua\n> -- This key expires in 25 seconds.\n> game:GetService(\"AssetService\"):LoadAssetAsync(" + await get_env_variable("LOADER_ASSET_ID") + ")(\'" + whitelist_info.rx_user_name + "\', \'" + key.loader_key + "\')\n> ```");
+      await interaction.followUp("> ```lua\n> game:GetService(\"AssetService\"):LoadAssetAsync(" + await get_env_variable("LOADER_ASSET_ID") + ")(\'" + whitelist_info.rx_user_name + "\', \'" + key.loader_key + "\')\n> -- This key expires in 25 seconds.\n> ```");
     } else if (key_type == "1") {
-      await interaction.followUp("> ```lua\n> -- This key expires in 25 seconds.\n> loadstring(game:GetService(\"HttpService\"):RequestAsync({Method = \"GET\", Url = \"" + await get_env_variable("API_URL") + "api/v3/loader\", Headers = {[\"X-Loader-Key\"] = \'" + key.loader_key + "\'}}).Body)(\'" + whitelist_info.rx_user_name + "\', \'" + key.loader_key + "\')\n> ```");
+      await interaction.followUp("> ```lua\n> loadstring(game:GetService(\"HttpService\"):RequestAsync({Method = \"GET\", Url = \"" + await get_env_variable("API_URL") + "api/v3/loader\", Headers = {[\"X-Loader-Key\"] = \'" + key.loader_key + "\'}}).Body)(\'" + whitelist_info.rx_user_name + "\', \'" + key.loader_key + "\')\n> -- This key expires in 25 seconds.\n> ```");
     }
   }
 }

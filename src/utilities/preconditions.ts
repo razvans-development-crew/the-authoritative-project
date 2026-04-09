@@ -67,12 +67,8 @@ interface RobloxIPInfo {
 }
 
 async function helper_obtain_ip_info(ip: string): Promise<any> {
-  const response = await fetch(`https://ipinfo.io/${ip}/json`)
-    .then(res => res.json())
-    .catch(() => "No IP info found") ;
-
-
-  return response;
+  const response = await fetch(`https://ipinfo.io/${ip}/json`);
+  return response.json() ?? "No IP info found";
 }
 
 export async function is_ip_from_roblox(ip: string): Promise<boolean> {
@@ -82,7 +78,7 @@ export async function is_ip_from_roblox(ip: string): Promise<boolean> {
                  "CA", "NL", "SE", "BR", "KR", "IE", "IN",
                  "IT", "ES", "RU", "ZA"]
 
-  const asn: String = ip_info?.as ?? "No ASN found";
+  const asn: String = ip_info?.org ?? "No ASN found";
   // const isp = ip_info?.isp ?? "No ISP found";
   const country_code: String = ip_info?.country ?? "No country code found";
   const org: String = ip_info?.org ?? "No org found";

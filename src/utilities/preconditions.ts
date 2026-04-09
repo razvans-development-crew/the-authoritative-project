@@ -81,12 +81,12 @@ export async function is_ip_from_roblox(ip: string): Promise<boolean> {
 
   const asn = ip_info?.as ?? "No ASN found";
   const isp = ip_info?.isp ?? "No ISP found";
-  const country_code = ip_info?.country_code ?? "No country code found";
+  const country_code = ip_info?.country ?? "No country code found";
   const org = ip_info?.org ?? "No org found";
 
-  if (isp != "Roblox" || !("roblox" in isp.toLowerCase())) {
-    return false;
-  }
+  // if (isp != "Roblox" || !("roblox" in isp.toLowerCase())) {
+  //   return false;
+  // }
 
   if (org == "Roblox" || !("roblox" in org.toLowerCase())) {
     return false;

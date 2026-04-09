@@ -79,30 +79,30 @@ export async function is_ip_from_roblox(ip: string): Promise<boolean> {
                  "CA", "NL", "SE", "BR", "KR", "IE", "IN",
                  "IT", "ES", "RU", "ZA"]
 
-  const asn = ip_info?.as ?? "No ASN found";
-  const isp = ip_info?.isp ?? "No ISP found";
-  const country_code = ip_info?.country ?? "No country code found";
-  const org = ip_info?.org ?? "No org found";
+  const asn: String = ip_info?.as ?? "No ASN found";
+  // const isp = ip_info?.isp ?? "No ISP found";
+  const country_code: String = ip_info?.country ?? "No country code found";
+  const org: String = ip_info?.org ?? "No org found";
 
   // if (isp != "Roblox" || !("roblox" in isp.toLowerCase())) {
   //   return false;
   // }
 
-  if (org == "Roblox" || !("roblox" in org.toLowerCase())) {
+  if (org == "Roblox" || !(org.toLowerCase().includes("roblox"))) {
     return false;
   }
 
-  if (!(country_code in COUNTRY_CODES)) {
+  if (!(COUNTRY_CODES.find(code => code === country_code))) {
     return false;
   }
 
   if (
     asn != "AS22697 Roblox"
     || asn != "AS11281 Roblox"
-    || !("AS22697".toLowerCase() in asn.toLowerCase())
-    || !("AS11281".toLowerCase() in asn.toLowerCase())
-    || !("AS11281 Roblox".toLowerCase() in asn.toLowerCase())
-    || !("AS136766".toLowerCase() in asn.toLowerCase())
+    || !(asn.toLowerCase().includes("AS22697".toLowerCase()))
+    || !(asn.toLowerCase().includes("AS11281".toLowerCase()))
+    || !(asn.toLowerCase().includes("AS11281 Roblox".toLowerCase()))
+    || !(asn.toLowerCase().includes("AS136766".toLowerCase()))
   ) {
     return false
   }

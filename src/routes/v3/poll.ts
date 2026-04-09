@@ -4,6 +4,7 @@ import { logger } from "../../utilities/logging.ts";
 import { check_api_key } from "../../utilities/security.ts";
 import { LogLevel } from "@sapphire/framework";
 import { is_ip_from_roblox } from "../../utilities/preconditions.ts"
+import { get_client_ip } from "../../utilities/helpers.ts";
 
 const request_queue = registry.request_queue
 
@@ -14,7 +15,7 @@ export function register_route(app: Elysia) {
       return context.status(401);
     }
 
-    const ip = context.server?.requestIP?.(context.request)?.address ?? 'unknown';
+    const ip = await get_client_ip(context.request, context.server);
 
     if (!await is_ip_from_roblox(ip)) {
       logger.write(LogLevel.Info, `IP is not from Roblox: ${ip}`);

@@ -133,3 +133,19 @@ export async function generate_random_string(length: number): Promise<string> {
 
   return result;
 }
+
+export async function get_client_ip(request: Request, server: any): Promise<string> {
+  const forwarded = request.headers.get("X-Forwarded-For");
+
+  if (forwarded) {
+    return forwarded.split(",")[0] ?? "unknown";
+  }
+
+  const real_ip = request.headers.get("X-Real-IP");
+
+  if (real_ip) {
+    return real_ip;
+  }
+
+  return server?.requestIP?.(request)?.address ?? "unknown";
+}

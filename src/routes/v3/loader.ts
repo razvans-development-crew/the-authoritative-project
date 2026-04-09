@@ -4,12 +4,11 @@ import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 import { is_ip_from_roblox } from "../../utilities/preconditions.ts"
 import { readFile } from "fs/promises";
+import { get_client_ip } from "../../utilities/helpers.ts";
 
 export function register_route(app: Elysia) {
   app.get("/api/v3/loader", async (context) => {
-    const ip =
-      context.server?.requestIP?.(context.request)?.address ??
-      'unknown';
+    const ip = await get_client_ip(context.request, context.server);
 
     if (!await is_ip_from_roblox(ip)) {
       logger.write(LogLevel.Info, `IP is not from Roblox: ${ip}`);

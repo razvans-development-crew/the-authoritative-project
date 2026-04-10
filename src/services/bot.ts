@@ -26,9 +26,9 @@ import {
   Partials, Routes, REST, ActivityType
 } from 'discord.js';
 
-identifyProperties.browser = "Discord iOS"; // discord embedded
-identifyProperties.device = "linux"; // xbox series x/s
-identifyProperties.os = "linux"; // linux
+// identifyProperties.browser = "Discord iOS"; // discord embedded
+// identifyProperties.device = "linux"; // xbox series x/s
+// identifyProperties.os = "linux"; // linux
 
 export const client = new Client({
   intents: [
@@ -138,6 +138,7 @@ export async function run_service(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     client.once("ready", () => {
       logger.write(LogLevel.Info, `Logged in as ${client.user?.tag}`);
+      resolve();
     });
 
     client.once("error", (err) => {

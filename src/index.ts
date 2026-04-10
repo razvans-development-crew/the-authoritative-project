@@ -14,7 +14,7 @@ const database = require("./utilities/database.ts");
   const running_services = [];
 
   for (const service of services_path) {
-    const JOB_ID = generate_random_string(12);
+    const JOB_ID = await generate_random_string(12);
 
     try {
       const service_path = path.join("./services", service);
@@ -22,7 +22,7 @@ const database = require("./utilities/database.ts");
       const service_module = await import(service_url);
 
       running_services.push(
-        await service_module.default()
+        service_module.default()
           .catch((err: Error) => {
             logger.write(LogLevel.Warn, `${service} has crashed:`, err);
           })

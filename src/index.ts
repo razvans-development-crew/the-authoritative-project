@@ -12,10 +12,13 @@ async function main() {
 
   const backend = run_backend_server().catch((err) => {
     database.disconnect();
-    logger.write(LogLevel.Warn, `Backend server has crashed: ${err}`);
+    logger.write(LogLevel.Warn, `Backend server has crashed:`, err);
   });
 
-  await run_bot();
+  await run_bot().catch((err) => {
+    database.disconnect();
+    logger.write(LogLevel.Warn, `Bot has crashed:`, err);
+  });
 
   logger.write(LogLevel.Info, "All services have started.")
   await Promise.all([backend]);

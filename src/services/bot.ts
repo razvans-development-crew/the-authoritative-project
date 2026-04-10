@@ -26,9 +26,9 @@ import {
   Partials, Routes, REST, ActivityType
 } from 'discord.js';
 
-// identifyProperties.browser = "Discord iOS"; // discord embedded
-// identifyProperties.device = "linux"; // xbox series x/s
-// identifyProperties.os = "linux"; // linux
+identifyProperties.browser = "Discord iOS"; // discord embedded
+identifyProperties.device = "linux"; // xbox series x/s
+identifyProperties.os = "linux"; // linux
 
 export const client = new Client({
   intents: [
@@ -57,11 +57,11 @@ export const client = new Client({
   logger: {
     instance: logger
   },
-  // ws: {
-  //   properties: {
-  //     $browser: "Discord iOS"
-  //   }
-  // },
+  ws: {
+    properties: {
+      $browser: "Discord iOS"
+    }
+  },
   presence: {
     status: "dnd",
     activities: [
@@ -136,19 +136,14 @@ export async function run_service(): Promise<void> {
   logger.write(LogLevel.Info, "Commands registered");
 
   return new Promise<void>((resolve, reject) => {
-    client.once("ready", () => {
+    client.once(Events.ClientReady, () => {
       logger.write(LogLevel.Info, `Logged in as ${client.user?.tag}`);
       resolve();
     });
 
-    client.once("error", (err) => {
+    client.once(Events.Error, (err) => {
       logger.write(LogLevel.Error, "Client error:", err);
       reject(err);
-    });
-
-    client.once("destroy", () => {
-      logger.write(LogLevel.Info, "Bot disconnected.");
-      resolve();
     });
 
     client.login(TOKEN).catch(reject);

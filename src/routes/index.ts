@@ -10,7 +10,7 @@ export function register_route(app: Elysia) {
   app.get("/", async (context) => {
     context.set.headers["content-type"] = "text/plain";
 
-    const uptime_until_now = Math.floor(new Date().getTime() - uptime / 1000);
+    const uptime_until_now = Math.floor((new Date().getTime() - uptime) / 1000);
     const bot_websocket_latency = client.ws.ping.toString() + "ms";
 
     let plaintext_page_index = await readFile(path.join(import.meta.dir, "../plaintext_pages/", "home.txt"), "utf-8");

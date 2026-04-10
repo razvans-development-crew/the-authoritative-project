@@ -135,11 +135,6 @@ export async function run_service(): Promise<void> {
   await register_commands(commands, TOKEN, CLIENT_ID);
   logger.write(LogLevel.Info, "Commands registered");
 
-  // login() initiates the connection — it does NOT mean the bot is ready
-  await client.login(TOKEN);
-
-  // Return a promise that lives for the bot's entire lifetime.
-  // Promise.all in index.ts will now correctly wait for this service.
   return new Promise<void>((resolve, reject) => {
     client.once("ready", () => {
       logger.write(LogLevel.Info, `Logged in as ${client.user?.tag}`);
@@ -154,6 +149,8 @@ export async function run_service(): Promise<void> {
       logger.write(LogLevel.Info, "Bot disconnected.");
       resolve();
     });
+
+    client.login(TOKEN).catch(reject);
   });
 }
 

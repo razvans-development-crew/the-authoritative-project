@@ -134,6 +134,9 @@ export async function run_bot(): Promise<void> {
     .then(() => { logger.write(LogLevel.Info, "Successfully loaded and registered commands"); })
     .catch((err) => { logger.write(LogLevel.Error, "Failed to load and register commands", err); });
 
-  await client.login(TOKEN);
+  await client.login(TOKEN)
+    .then(() => { logger.write(LogLevel.Info, "Successfully logged in"); })
+    .catch((err) => { logger.write(LogLevel.Error, "Failed to log in", err); });
+    
   logger.write(LogLevel.Debug, "Logged in");
 }

@@ -7,7 +7,7 @@ import { LogLevel } from "@sapphire/framework";
 // import { get_client_ip } from "../utilities/helpers.ts";
 
 export const AHEAD_OF_TIME = true;
-export const PRECOMPILE = true;
+export const PRECOMPILE = false;
 
 const env_variables = require("../utilities/env_variables.ts");
 const app = new Elysia({

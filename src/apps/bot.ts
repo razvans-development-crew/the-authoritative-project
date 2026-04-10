@@ -125,7 +125,7 @@ export async function run_bot(): Promise<void> {
 
   {
     client.commands = commands;
-    await register_commands(commands, TOKEN, CLIENT_ID);
+    register_commands(commands, TOKEN, CLIENT_ID);
   }
 
   client.login(await get_env_variable("TOKEN"));

@@ -6,6 +6,8 @@ import path from "path";
 import { client } from "./services/bot.ts";
 import { run_service } from "./services/bot.ts";
 import { get_env_variable } from "./utilities/env_variables.ts";
+import { register_commands } from "./loaders/register_commands.ts";
+import { load_commands } from "./loaders/command_loader.ts";
 
 export const uptime = new Date().getTime();
 
@@ -51,6 +53,10 @@ const database = require("./utilities/database.ts");
   }
 
   try {
+    const commands = await load_commands(path.join(import.meta.dir, "./commands"));
+    await register_commands(commands, await get_env_variable("TOKEN"), await get_env_variable("CLIENT_ID"));
+    (client as any).commands = commands;
+
     logger.write(LogLevel.Info, "Starting bot...");
     client.login(await get_env_variable("TOKEN"));
   } catch {

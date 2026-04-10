@@ -10,7 +10,7 @@ const database = require("./utilities/database.ts");
 async function main() {
   database.connect();
 
-  const backend = run_backend_server().catch((err) => {
+  await run_backend_server().catch((err) => {
     database.disconnect();
     logger.write(LogLevel.Warn, `Backend server has crashed:`, err);
   });
@@ -21,7 +21,6 @@ async function main() {
   });
 
   logger.write(LogLevel.Info, "All services have started.")
-  await Promise.all([backend]);
 }
 
 await main();

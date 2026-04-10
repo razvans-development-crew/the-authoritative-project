@@ -6,10 +6,13 @@ import { logger as utils_logger } from "../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
 import { get_client_ip } from "../utilities/helpers.ts";
 
+export const AHEAD_OF_TIME = true;
+export const PRECOMPILE = true;
+
 const env_variables = require("../utilities/env_variables.ts");
 const app = new Elysia({
-  aot: true,
-  precompile: true,
+  aot: AHEAD_OF_TIME,
+  precompile: PRECOMPILE,
   nativeStaticResponse: true,
 });
 

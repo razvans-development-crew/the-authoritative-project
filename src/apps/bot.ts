@@ -74,7 +74,7 @@ export const client = new Client({
 });
 
 {
-  (client as any).commands = commands;
+  client.commands = commands;
   await register_commands(commands, TOKEN, CLIENT_ID);
 }
 

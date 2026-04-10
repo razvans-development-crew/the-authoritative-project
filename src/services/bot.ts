@@ -81,16 +81,6 @@ client.once(Events.ClientReady, async (readyClient) => {
     ALREADY_RAN_EXPIRED_BANS_WATCHDOG = true;
     watch_for_expired_bans();
   }
-
-  // if (!ALREADY_REGISTERED_COMMANDS) {
-  //   ALREADY_REGISTERED_COMMANDS = true;
-
-  //   (client as any).commands = commands;
-
-  //   register_commands(commands, TOKEN, CLIENT_ID)
-  //     .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })
-  //     .then(() => { logger.write(LogLevel.Info, "Successfully registered commands"); })
-  // }
 })
 
 client.on(Events.Error, async (error) => {
@@ -141,16 +131,30 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 export async function run_service(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
-  try {
-    (client as any).commands = commands;
-    await register_commands(commands, TOKEN, CLIENT_ID);
-    logger.write(LogLevel.Info, "Commands registered");
+  (client as any).commands = commands;
+  await register_commands(commands, TOKEN, CLIENT_ID);
+  logger.write(LogLevel.Info, "Commands registered");
 
-    await client.login(TOKEN);
-    logger.write(LogLevel.Info, "Bot logged in");
-  } catch (err) {
-    logger.write(LogLevel.Error, `Bot startup failed:`, err);
-  }
+  // login() initiates the connection — it does NOT mean the bot is ready
+  await client.login(TOKEN);
+
+  // Return a promise that lives for the bot's entire lifetime.
+  // Promise.all in index.ts will now correctly wait for this service.
+  return new Promise<void>((resolve, reject) => {
+    client.once("ready", () => {
+      logger.write(LogLevel.Info, `Logged in as ${client.user?.tag}`);
+    });
+
+    client.once("error", (err) => {
+      logger.write(LogLevel.Error, "Client error:", err);
+      reject(err);
+    });
+
+    client.once("destroy", () => {
+      logger.write(LogLevel.Info, "Bot disconnected.");
+      resolve();
+    });
+  });
 }
 
 export default run_service;

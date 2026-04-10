@@ -57,11 +57,11 @@ export const client = new Client({
   logger: {
     instance: logger
   },
-  ws: {
-    properties: {
-      $browser: "Discord iOS"
-    }
-  },
+  // ws: {
+  //   properties: {
+  //     $browser: "Discord iOS"
+  //   }
+  // },
   presence: {
     status: "dnd",
     activities: [

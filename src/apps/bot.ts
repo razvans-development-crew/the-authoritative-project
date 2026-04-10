@@ -132,4 +132,6 @@ export async function run_bot(): Promise<void> {
 
   await register_commands(commands, TOKEN, CLIENT_ID);
   await client.login(TOKEN);
+
+  return new Promise(() => {}); // literally just to keep the service alive
 }

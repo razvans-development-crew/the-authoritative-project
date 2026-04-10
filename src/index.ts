@@ -37,5 +37,5 @@ const database = require("./utilities/database.ts");
     }
   }
 
-
+  await Promise.all(running_services)
 })()

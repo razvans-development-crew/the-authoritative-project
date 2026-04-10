@@ -73,11 +73,6 @@ export const client = new Client({
   }
 });
 
-{
-  client.commands = commands;
-  await register_commands(commands, TOKEN, CLIENT_ID);
-}
-
 client.once(Events.ClientReady, async (readyClient: typeof Client) => {
   logger.write(LogLevel.Info, `Logged in as ${readyClient.user?.tag}`);
 
@@ -127,6 +122,11 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 
 export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
+
+  {
+    client.commands = commands;
+    await register_commands(commands, TOKEN, CLIENT_ID);
+  }
 
   client.login(TOKEN);
 }

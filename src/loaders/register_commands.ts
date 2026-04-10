@@ -28,6 +28,7 @@ export async function register_commands(
   const body = [];
 
   for (const cmd of topLevel) {
+    logger.write(LogLevel.Info, `Registering command ${cmd.data.name}`);
     body.push(cmd.data.toJSON());
   }
 
@@ -37,6 +38,7 @@ export async function register_commands(
       .setDescription(`commands for ${groupName}`);
 
     for (const cmd of groupCommands) {
+      logger.write(LogLevel.Info, `Registering command ${cmd.data.name}`);
       parentCommand.addSubcommand(sub => {
         sub.setName(cmd.data.name).setDescription(cmd.data.description || "no description");
 

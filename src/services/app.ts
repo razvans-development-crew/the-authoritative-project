@@ -34,3 +34,5 @@ export async function run_service(): Promise<void> {
     utils_logger.info(`Server started on port ${await env_variables.get_env_variable("PORT")} | https://127.0.0.1:${await env_variables.get_env_variable("PORT")}`);
   });
 }
+
+export default run_service;

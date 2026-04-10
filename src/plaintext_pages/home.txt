@@ -68,3 +68,4 @@ some runtime information
 -> ahead-of-time compilation for routes: {AOT}
 -> precompilation for routes: {PRECOMPILE}
 -> discord.js websocket latency: {WS_LATENCY}
+-> is bot ratelimited: {RATELIMITED}

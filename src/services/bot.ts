@@ -1,6 +1,7 @@
 import { logger } from "../utilities/logging.ts";
 import { get_env_variable } from "../utilities/env_variables.ts";
 import { UserFlagsBitField, type BaseInteraction, type CommandInteraction, type Interaction, type InteractionResponse } from "discord.js";
+import { is_bot_ratelimited } from "../utilities/helpers.ts";
 import { load_commands } from "../loaders/command_loader.ts";
 import { register_commands } from "../loaders/register_commands.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -132,6 +133,11 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 
 export async function run_service(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
+
+  if ((await is_bot_ratelimited()).is_ratelimited) {
+    logger.write(LogLevel.Info, "Bot is ratelimited, waiting for " + (await is_bot_ratelimited()).retry_after + " seconds before trying again.");
+    return new Promise<void>((resolve, reject) => {});
+  }
 
   (client as any).commands = commands;
   await register_commands(commands, TOKEN, CLIENT_ID);

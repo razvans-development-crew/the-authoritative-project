@@ -1,3 +1,5 @@
+import { get_env_variable } from "./env_variables";
+
 export const CHARACTER_ARRAY = [
   "a", "b", "c", "d", "e", "f", "g",
   "h", "i", "j", "k", "l", "m", "n",
@@ -148,4 +150,31 @@ export async function get_client_ip(request: Request, server: any): Promise<stri
   }
 
   return server?.requestIP?.(request)?.address ?? "unknown";
+}
+
+export async function is_bot_ratelimited() {
+  const response = await fetch("https://discord.com/api/v10/gateway", {
+    method: "GET",
+    headers: {
+      "Authorization": await get_env_variable("DISCORD_TOKEN"),
+    }
+  });
+
+  if (response.status == 429) {
+    return {
+      is_ratelimited: true,
+      retry_after: response.headers.get("Retry-After"),
+      reset_after: response.headers.get("X-RateLimit-Reset-After"),
+      rate_limit_remaining: response.headers.get("X-RateLimit-Remaining"),
+      rate_limit_scope: response.headers.get("X-RateLimit-Scope")
+    };
+  }
+
+  return {
+    is_ratelimited: false,
+    retry_after: null,
+    reset_after: null,
+    rate_limit_remaining: null,
+    rate_limit_scope: null
+  };
 }

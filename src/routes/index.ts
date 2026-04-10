@@ -18,15 +18,15 @@ export function register_route(app: Elysia) {
       plaintext_page_index = plaintext_page_index.replace("{UPTIME}", uptime_until_now.toString());
     }
 
-    if (plaintext_page_index.includes("AOT")) {
+    if (plaintext_page_index.includes("{AOT}")) {
       plaintext_page_index = plaintext_page_index.replace("AOT", AHEAD_OF_TIME ? "true" : "false");
     }
 
-    if (plaintext_page_index.includes("PRECOMPILE")) {
+    if (plaintext_page_index.includes("{PRECOMPILE}")) {
       plaintext_page_index = plaintext_page_index.replace("PRECOMPILE", PRECOMPILE ? "true" : "false");
     }
 
-    if (plaintext_page_index.includes("WS_LATENCY")) {
+    if (plaintext_page_index.includes("{WS_LATENCY}")) {
       plaintext_page_index = plaintext_page_index.replace("WS_LATENCY", bot_websocket_latency);
     }
 

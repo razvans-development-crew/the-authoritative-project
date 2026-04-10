@@ -71,7 +71,9 @@ export const client = new Client({
         type: ActivityType.Watching
       }
     ]
-  }
+  },
+  rest: { debug: true },
+  shards: "auto"
 });
 
 client.once(Events.ClientReady, async (readyClient) => {

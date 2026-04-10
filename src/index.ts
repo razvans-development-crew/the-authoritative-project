@@ -4,7 +4,7 @@ import { readdir } from "fs/promises";
 import { generate_random_string } from "./utilities/helpers.ts";
 import path from "path";
 import { client } from "./services/bot.ts";
-import { run_service } from "./services/bot.ts";
+import { run_service } from "./services/app.ts";
 import { get_env_variable } from "./utilities/env_variables.ts";
 import { register_commands } from "./loaders/register_commands.ts";
 import { load_commands } from "./loaders/command_loader.ts";

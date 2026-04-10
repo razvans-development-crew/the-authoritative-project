@@ -9,6 +9,7 @@ import { watch_for_expired_bans } from "../watchdogs/watch_for_expired_bans.ts";
 const fs = require('node:fs');
 const path = require('node:path');
 const commands_path = path.join(import.meta.dir, "../commands");
+const commands = await load_commands(commands_path);
 const database = require("../utilities/database.ts");
 const TOKEN = await get_env_variable("TOKEN")!;
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
@@ -139,8 +140,6 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 
 export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
-
-  const commands = await load_commands(commands_path);
 
   register_commands(commands, TOKEN, CLIENT_ID)
     .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })

@@ -11,7 +11,7 @@ const path = require('node:path');
 const commands_path = path.join(import.meta.dir, "../commands");
 const commands = await load_commands(commands_path);
 const database = require("../utilities/database.ts");
-const TOKEN = await get_env_variable("TOKEN")!;
+const TOKEN = await get_env_variable("TOKEN");
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
 const {
   DefaultWebSocketManagerOptions: { identifyProperties }
@@ -141,11 +141,14 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
-  register_commands(commands, TOKEN, CLIENT_ID)
-    .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })
-    .then(() => { logger.write(LogLevel.Info, "Successfully registered commands"); })
+  await register_commands(commands, TOKEN, CLIENT_ID)
+    .catch((err) => {
+      logger.write(LogLevel.Error, `Failed to register commands: ${err}`);
+    })
+    .then(() => {
+      logger.write(LogLevel.Info, "Successfully registered commands");
+    })
 
-  client.login(TOKEN)
-    .catch((err) => { logger.write(LogLevel.Error, `Failed to log in: ${err}`); })
-    .then(() => { logger.write(LogLevel.Info, "Successfully logged in"); })
+  await client.login(TOKEN);
+  logger.write(LogLevel.Info, "Login request has been sent");
 }

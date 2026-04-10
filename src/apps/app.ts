@@ -36,12 +36,12 @@ export async function run_backend_server(): Promise<void> {
   // }));
 
   app.onAfterResponse(async (context) => {
-    utils_logger.write(LogLevel.Info, `(Outgoing Response) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
+    utils_logger.write(LogLevel.Info, `${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
   });
 
-  app.onRequest(async (context) => {
-    utils_logger.write(LogLevel.Info, `(Incoming) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
-  });
+  // app.onRequest(async (context) => {
+  //   utils_logger.write(LogLevel.Info, `(Incoming) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
+  // });
 
   app.listen(Number(await env_variables.get_env_variable("PORT")) ?? 8000, async () => {
     utils_logger.info(`Server started on port ${await env_variables.get_env_variable("PORT")} | https://127.0.0.1:${await env_variables.get_env_variable("PORT")}`);

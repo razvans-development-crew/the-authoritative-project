@@ -154,5 +154,7 @@ export async function run_bot(): Promise<void> {
     (client as any).commands = commands;
   } catch (err) {
     logger.write(LogLevel.Error, `Failed to start the bot:`, err);
+  } finally {
+    logger.write(LogLevel.Info, "Bot has successfully started.");
   }
 }

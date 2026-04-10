@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@bogeychan/elysia-logger": "^0.1.10",
+    "@elysiajs/server-timing": "^1.4.0",
     "@elysiajs/static": "^1.4.7",
     "@prisma/client": "6.19",
     "@sapphire/framework": "^5.5.0",

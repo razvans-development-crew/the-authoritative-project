@@ -9,7 +9,6 @@ import { watch_for_expired_bans } from "../watchdogs/watch_for_expired_bans.ts";
 const fs = require('node:fs');
 const path = require('node:path');
 const commands_path = path.join(import.meta.dir, "../commands");
-const commands = await load_commands(commands_path);
 const database = require("../utilities/database.ts");
 const TOKEN = await get_env_variable("TOKEN")!;
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
@@ -18,7 +17,7 @@ const {
 } = require("@discordjs/ws");
 
 let ALREADY_RAN_EXPIRED_BANS_WATCHDOG = false;
-let ALREADY_REGISTERED_COMMANDS = false;
+// let ALREADY_REGISTERED_COMMANDS = false;
 
 import {
   Client, Collection, Events,
@@ -82,13 +81,15 @@ client.once(Events.ClientReady, async (readyClient) => {
     watch_for_expired_bans();
   }
 
-  if (!ALREADY_REGISTERED_COMMANDS) {
-    ALREADY_REGISTERED_COMMANDS = true;
+  // if (!ALREADY_REGISTERED_COMMANDS) {
+  //   ALREADY_REGISTERED_COMMANDS = true;
 
-    register_commands(commands, TOKEN, CLIENT_ID)
-      .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })
-      .then(() => { logger.write(LogLevel.Info, "Successfully registered commands"); })
-  }
+  //   (client as any).commands = commands;
+
+  //   register_commands(commands, TOKEN, CLIENT_ID)
+  //     .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })
+  //     .then(() => { logger.write(LogLevel.Info, "Successfully registered commands"); })
+  // }
 })
 
 client.on(Events.Error, async (error) => {
@@ -139,11 +140,13 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
-  try {
-    await client.login(TOKEN);
-    logger.write(LogLevel.Info, "Successfully logged in");
-  } catch (err) {
-    logger.write(LogLevel.Error, "Failed to log in", err);
-    return;
-  }
+  const commands = await load_commands(commands_path);
+
+  register_commands(commands, TOKEN, CLIENT_ID)
+    .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })
+    .then(() => { logger.write(LogLevel.Info, "Successfully registered commands"); })
+
+  client.login(TOKEN)
+    .catch((err) => { logger.write(LogLevel.Error, `Failed to log in: ${err}`); })
+    .then(() => { logger.write(LogLevel.Info, "Successfully logged in"); })
 }

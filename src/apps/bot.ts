@@ -150,5 +150,10 @@ export async function run_bot(): Promise<void> {
     })
 
   await client.login(TOKEN);
+
+  await new Promise<void>((resolve) => {
+    client.once(Events.ClientReady, () => resolve())
+  })
+
   logger.write(LogLevel.Info, "Login request has been sent");
 }

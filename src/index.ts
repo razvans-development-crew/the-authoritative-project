@@ -8,22 +8,20 @@ export const uptime = new Date().getTime();
 const database = require("./utilities/database.ts");
 
 async function main() {
-  await run_backend_server().catch((err) => {
+  const backend = run_backend_server().catch((err) => {
     database.disconnect();
-    logger.write(LogLevel.Warn, `Exception while running backend server: ${err}`);
+    logger.write(LogLevel.Warn, `Backend server has crashed: ${err}`);
   }).then(() => {
     database.connect();
     logger.write(LogLevel.Info, "Backend server has started");
-  }).finally(() => {
-    logger.write(LogLevel.Warn, "Backend server has stopped")
   });
 
-  await run_bot().catch((err) => {
+  const bot = run_bot().catch((err) => {
     database.disconnect();
-    logger.write(LogLevel.Warn, `Exception while running bot: ${err}`);
-  }).finally(() => {
-    logger.write(LogLevel.Warn, "Bot has stopped")
+    logger.write(LogLevel.Warn, `Bot has crashed: ${err}`);
   });
+
+  await Promise.all([backend, bot])
 }
 
 await main();

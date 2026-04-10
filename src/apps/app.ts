@@ -16,11 +16,10 @@ const app = new Elysia({
   nativeStaticResponse: true,
 });
 
+await load_routes(app, join(import.meta.dir, "../routes"));
 
 export async function run_backend_server(): Promise<void> {
   utils_logger.write(LogLevel.Info, "Starting backend server...");
-
-  await load_routes(app, join(import.meta.dir, "../routes"));
 
   // app.use(logger({
   //   level: "debug",
@@ -44,7 +43,7 @@ export async function run_backend_server(): Promise<void> {
     utils_logger.write(LogLevel.Info, `(Incoming) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
   });
 
-  app.listen(await env_variables.get_env_variable("PORT"), async () => {
+  app.listen(await env_variables.get_env_variable("PORT")?.toString() ?? 8000, async () => {
     utils_logger.info(`Server started on port ${await env_variables.get_env_variable("PORT")} | https://127.0.0.1:${await env_variables.get_env_variable("PORT")}`);
   });
 }

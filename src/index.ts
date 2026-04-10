@@ -1,28 +1,41 @@
-import { run_backend_server } from "./apps/app.ts";
 import { logger } from "./utilities/logging.ts";
-import { run_bot } from "./apps/bot.ts";
 import { LogLevel } from "@sapphire/framework";
+import { readdir } from "fs/promises";
+import { pathToFileURL } from "url";
+import { generate_random_string } from "./utilities/helpers.ts";
+import path from "path";
 
 export const uptime = new Date().getTime();
 
 const database = require("./utilities/database.ts");
 
-async function main() {
-  database.connect();
+(async () => {
+  const services_path = await readdir("./services");
+  const running_services = [];
 
-  await run_backend_server().catch((err) => {
-    database.disconnect();
-    logger.write(LogLevel.Warn, `Backend server has crashed:`, err);
-  });
+  for (const service of services_path) {
+    const JOB_ID = generate_random_string(12);
 
-  await run_bot().catch((err) => {
-    database.disconnect();
-    logger.write(LogLevel.Warn, `Bot has crashed:`, err);
-  }).then(() => {
-    logger.write(LogLevel.Info, "Bot has started.");
-  });
+    try {
+      const service_path = path.join("./services", service);
+      const service_url = pathToFileURL(service_path).href;
+      const service_module = await import(service_url);
 
-  logger.write(LogLevel.Info, "All services have started.")
-}
+      service_module.default()
+        .catch((err: Error) => {
+          logger.write(LogLevel.Warn, `${service} has crashed:`, err);
+        })
+        .then(() => {
+          logger.write(LogLevel.Info, `${service} has started successfully.`);
+        });
 
-await main();
+      running_services.push(service);
+    } catch (err) {
+      logger.write(LogLevel.Warn, `Failed to load ${service}: `, err);
+    } finally {
+      logger.write(LogLevel.Info, `Finished start job ${JOB_ID} for ${service}`);
+    }
+  }
+
+
+})()

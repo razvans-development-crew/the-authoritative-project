@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { readFile } from "fs/promises";
 import { uptime } from "../index.ts";
-import { client } from "../apps/bot.ts";
-import { AHEAD_OF_TIME, PRECOMPILE } from "../apps/app.ts";
+import { client } from "../services/bot.ts";
+import { AHEAD_OF_TIME, PRECOMPILE } from "../services/app.ts";
 
 export function register_route(app: Elysia) {
   app.get("/", async (context) => {

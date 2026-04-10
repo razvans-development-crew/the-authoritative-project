@@ -16,24 +16,11 @@ const app = new Elysia({
   nativeStaticResponse: true,
 });
 
-await load_routes(app, join(import.meta.dir, "../routes"));
 
-export async function run_backend_server(): Promise<void> {
+export async function run_service(): Promise<void> {
   utils_logger.write(LogLevel.Info, "Starting backend server...");
 
-  // app.use(logger({
-  //   level: "debug",
-  //   formatters: {
-  //     bindings: () => ({ pid: null })
-  //   },
-  //   transport: {
-  //     target: "pino-pretty",
-  //     options: {
-  //       colorize: true
-  //     }
-  //   },
-  //   autoLogging: true
-  // }));
+  await load_routes(app, join(import.meta.dir, "../routes"));
 
   app.onAfterResponse(async (context) => {
     utils_logger.write(LogLevel.Info, `${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);

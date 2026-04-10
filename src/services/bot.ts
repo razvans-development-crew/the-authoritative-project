@@ -138,7 +138,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
   }
 });
 
-export async function run_bot(): Promise<void> {
+export async function run_service(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
   await register_commands(commands, TOKEN, CLIENT_ID)
@@ -158,3 +158,5 @@ export async function run_bot(): Promise<void> {
     logger.write(LogLevel.Info, "Bot has successfully started.");
   }
 }
+
+export default run_service;

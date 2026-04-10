@@ -10,7 +10,7 @@ import { watch_for_expired_bans } from "../watchdogs/watch_for_expired_bans.ts";
 const fs = require('node:fs');
 const path = require('node:path');
 const commands_path = path.join(import.meta.dir, "../commands");
-const commands = await load_commands(commands_path);
+let commands;
 const database = require("../utilities/database.ts");
 const TOKEN = await get_env_variable("TOKEN");
 const CLIENT_ID = await get_env_variable("CLIENT_ID")!;
@@ -135,9 +135,11 @@ export async function run_service(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
   if ((await is_bot_ratelimited()).is_ratelimited) {
-    logger.write(LogLevel.Info, "Bot is ratelimited, waiting for " + (await is_bot_ratelimited()).retry_after + " seconds before trying again.");
+    logger.write(LogLevel.Warn, "Bot is ratelimited, waiting for " + (await is_bot_ratelimited()).retry_after + " seconds before trying again.");
     return new Promise<void>((resolve, reject) => {});
   }
+
+  commands = await load_commands(commands_path);
 
   (client as any).commands = commands;
   await register_commands(commands, TOKEN, CLIENT_ID);

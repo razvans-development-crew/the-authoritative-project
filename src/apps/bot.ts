@@ -18,6 +18,7 @@ const {
 } = require("@discordjs/ws");
 
 let ALREADY_RAN_EXPIRED_BANS_WATCHDOG = false;
+let ALREADY_REGISTERED_COMMANDS = false;
 
 import {
   Client, Collection, Events,
@@ -79,6 +80,14 @@ client.once(Events.ClientReady, async (readyClient) => {
   if (!ALREADY_RAN_EXPIRED_BANS_WATCHDOG) {
     ALREADY_RAN_EXPIRED_BANS_WATCHDOG = true;
     watch_for_expired_bans();
+  }
+
+  if (!ALREADY_REGISTERED_COMMANDS) {
+    ALREADY_REGISTERED_COMMANDS = true;
+
+    register_commands(commands, TOKEN, CLIENT_ID)
+      .catch((err) => { logger.write(LogLevel.Error, `Failed to register commands: ${err}`); })
+      .then(() => { logger.write(LogLevel.Info, "Successfully registered commands"); })
   }
 })
 

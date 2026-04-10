@@ -64,7 +64,7 @@ latest changelogs (from latest to earliest)
 some runtime information
 ------------------------
 
--> instance uptime: {UPTIME}
+-> instance uptime in seconds: {UPTIME}
 -> ahead-of-time compilation for routes: {AOT}
 -> precompilation for routes: {PRECOMPILE}
 -> discord.js websocket latency: {WS_LATENCY}

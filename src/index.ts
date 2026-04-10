@@ -18,6 +18,8 @@ async function main() {
   await run_bot().catch((err) => {
     database.disconnect();
     logger.write(LogLevel.Warn, `Bot has crashed:`, err);
+  }).then(() => {
+    logger.write(LogLevel.Info, "Bot has started.");
   });
 
   logger.write(LogLevel.Info, "All services have started.")

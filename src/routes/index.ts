@@ -19,15 +19,15 @@ export function register_route(app: Elysia) {
     }
 
     if (plaintext_page_index.includes("{AOT}")) {
-      plaintext_page_index = plaintext_page_index.replace("AOT", AHEAD_OF_TIME ? "true" : "false");
+      plaintext_page_index = plaintext_page_index.replace("{AOT}", AHEAD_OF_TIME ? "true" : "false");
     }
 
     if (plaintext_page_index.includes("{PRECOMPILE}")) {
-      plaintext_page_index = plaintext_page_index.replace("PRECOMPILE", PRECOMPILE ? "true" : "false");
+      plaintext_page_index = plaintext_page_index.replace("{PRECOMPILE}", PRECOMPILE ? "true" : "false");
     }
 
     if (plaintext_page_index.includes("{WS_LATENCY}")) {
-      plaintext_page_index = plaintext_page_index.replace("WS_LATENCY", bot_websocket_latency);
+      plaintext_page_index = plaintext_page_index.replace("{WS_LATENCY}", bot_websocket_latency);
     }
 
     return plaintext_page_index;

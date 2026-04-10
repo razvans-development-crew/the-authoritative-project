@@ -141,21 +141,15 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 export async function run_service(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
-  await register_commands(commands, TOKEN, CLIENT_ID)
-  .catch((err) => {
-    logger.write(LogLevel.Error, `Failed to register commands: ${err}`);
-    })
-    .then(() => {
-      logger.write(LogLevel.Info, "Successfully registered commands");
-    })
-
   try {
-    await client.login(TOKEN);
     (client as any).commands = commands;
+    await register_commands(commands, TOKEN, CLIENT_ID);
+    logger.write(LogLevel.Info, "Commands registered");
+
+    await client.login(TOKEN);
+    logger.write(LogLevel.Info, "Bot logged in");
   } catch (err) {
-    logger.write(LogLevel.Error, `Failed to start the bot:`, err);
-  } finally {
-    logger.write(LogLevel.Info, "Bot has successfully started.");
+    logger.write(LogLevel.Error, `Bot startup failed:`, err);
   }
 }
 

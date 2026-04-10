@@ -10,7 +10,7 @@ export const uptime = new Date().getTime();
 const database = require("./utilities/database.ts");
 
 (async () => {
-  const services_path = await readdir("./services");
+  const services_path = await readdir(path.join(import.meta.dir, "./services"));
   const running_services = [];
 
   for (const service of services_path) {
@@ -21,15 +21,15 @@ const database = require("./utilities/database.ts");
       const service_url = pathToFileURL(service_path).href;
       const service_module = await import(service_url);
 
-      service_module.default()
-        .catch((err: Error) => {
-          logger.write(LogLevel.Warn, `${service} has crashed:`, err);
-        })
-        .then(() => {
-          logger.write(LogLevel.Info, `${service} has started successfully.`);
-        });
-
-      running_services.push(service);
+      running_services.push(
+        await service_module.default()
+          .catch((err: Error) => {
+            logger.write(LogLevel.Warn, `${service} has crashed:`, err);
+          })
+          .then(() => {
+            logger.write(LogLevel.Info, `${service} has started successfully.`);
+          })
+      );
     } catch (err) {
       logger.write(LogLevel.Warn, `Failed to load ${service}: `, err);
     } finally {

@@ -131,5 +131,8 @@ export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
   await register_commands(commands, TOKEN, CLIENT_ID);
+  logger.write(LogLevel.Debug, "Registered commands");
+
   await client.login(TOKEN);
+  logger.write(LogLevel.Debug, "Logged in");
 }

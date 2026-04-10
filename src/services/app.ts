@@ -1,11 +1,12 @@
 import { Elysia } from "elysia";
 import { load_routes } from "../loaders/route_loader.ts";
-import { logger } from "@bogeychan/elysia-logger";
+// import { logger } from "@bogeychan/elysia-logger";
 import { join } from "path";
 import { logger as utils_logger } from "../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
-import { get_client_ip } from "../utilities/helpers.ts";
+// import { get_client_ip } from "../utilities/helpers.ts";
 import { staticPlugin } from "@elysiajs/static"
+import logixlysia from "logixlysia"
 
 export const AHEAD_OF_TIME = true;
 export const PRECOMPILE = true;
@@ -27,9 +28,27 @@ export async function run_service(): Promise<void> {
     prefix: "/static",
   }))
 
-  app.onAfterResponse(async (context) => {
-    utils_logger.write(LogLevel.Info, `${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
-  });
+  app.use(
+    logixlysia({
+      config: {
+        service: "tap-server",
+        showStartupMessage: true,
+        startupMessageFormat: 'banner',
+        showContextTree: true,
+        contextDepth: 2,
+        slowThreshold: 500,
+        verySlowThreshold: 1000,
+        timestamp: {
+          translateTime: "yyyy-mm-dd HH:MM:ss.SSS"
+        },
+        ip: true
+      }
+    })
+  )
+
+  // app.onAfterResponse(async (context) => {
+  //   utils_logger.write(LogLevel.Info, `${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
+  // });
 
   // app.onRequest(async (context) => {
   //   utils_logger.write(LogLevel.Info, `(Incoming) ${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);

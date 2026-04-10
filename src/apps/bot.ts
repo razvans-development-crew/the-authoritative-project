@@ -19,11 +19,11 @@ const {
 
 let ALREADY_RAN_EXPIRED_BANS_WATCHDOG = false;
 
-const {
+import {
   Client, Collection, Events,
   GatewayIntentBits, MessageFlags,
   Partials, Routes, REST, ActivityType
-} = require('discord.js');
+} from 'discord.js';
 
 identifyProperties.browser = "Discord iOS"; // discord embedded
 identifyProperties.device = "linux"; // xbox series x/s
@@ -73,13 +73,21 @@ export const client = new Client({
   }
 });
 
-client.once(Events.ClientReady, async (readyClient: typeof Client) => {
+client.once(Events.ClientReady, async (readyClient) => {
   logger.write(LogLevel.Info, `Logged in as ${readyClient.user?.tag}`);
 
   if (!ALREADY_RAN_EXPIRED_BANS_WATCHDOG) {
     ALREADY_RAN_EXPIRED_BANS_WATCHDOG = true;
     watch_for_expired_bans();
   }
+})
+
+client.on(Events.Error, async (error) => {
+  logger.write(LogLevel.Error, `Discord client error:`, error);
+})
+
+client.on(Events.Debug, async (debug_msg) => {
+  logger.write(LogLevel.Debug, `Debug:`, debug_msg);
 })
 
 client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
@@ -108,8 +116,7 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 
     if (interaction.deferred) {
       await interaction.editReply({
-        content: "> An error has occurred while executing the command.",
-        flags: MessageFlags.Ephemeral
+        content: "> An error has occurred while executing the command."
       });
     } else {
       await interaction.reply({
@@ -123,10 +130,6 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
-  {
-    client.commands = commands;
-    await register_commands(commands, TOKEN, CLIENT_ID);
-  }
-
-  client.login(TOKEN);
+  await register_commands(commands, TOKEN, CLIENT_ID);
+  await client.login(TOKEN);
 }

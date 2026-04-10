@@ -130,13 +130,20 @@ client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
 export async function run_bot(): Promise<void> {
   logger.write(LogLevel.Info, "Starting bot...");
 
-  register_commands(commands, TOKEN, CLIENT_ID)
-    .then(() => { logger.write(LogLevel.Info, "Successfully loaded and registered commands"); })
-    .catch((err) => { logger.write(LogLevel.Error, "Failed to load and register commands", err); });
+  try {
+    await register_commands(commands, TOKEN, CLIENT_ID);
+    logger.write(LogLevel.Info, "Successfully loaded and registered commands");
+  } catch (err) {
+    logger.write(LogLevel.Error, "Failed to load and register commands", err);
+  }
 
-  await client.login(TOKEN)
-    .then(() => { logger.write(LogLevel.Info, "Successfully logged in"); })
-    .catch((err) => { logger.write(LogLevel.Error, "Failed to log in", err); });
-    
+  try {
+    await client.login(TOKEN);
+    logger.write(LogLevel.Info, "Successfully logged in");
+  } catch (err) {
+    logger.write(LogLevel.Error, "Failed to log in", err);
+    return;
+  }
+
   logger.write(LogLevel.Debug, "Logged in");
 }

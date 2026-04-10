@@ -156,7 +156,7 @@ export async function is_bot_ratelimited() {
   const response = await fetch("https://discord.com/api/v10/gateway", {
     method: "GET",
     headers: {
-      "Authorization": await get_env_variable("DISCORD_TOKEN"),
+      "Authorization": await get_env_variable("TOKEN"),
     }
   });
 

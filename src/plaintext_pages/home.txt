@@ -15,6 +15,11 @@ elysia and discord.js
 latest changelogs (from latest to earliest)
 -------------------------------------------
 
+-> release 26.9
+   + enabled ahead-of-time compilation and precompilation of 
+     all backend routes for a significant performance boost of 
+     the API
+
 -> release 26.8
    + added administrative commands for those who have the 5th
      privilege level

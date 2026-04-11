@@ -29,7 +29,7 @@ export async function run_service(): Promise<void> {
 
   app.use(serverTiming());
 
-  app.onAfterResponse(async (context) => {
+  app.onRequest(async (context) => {
     utils_logger.write(LogLevel.Info, `${await get_client_ip(context.request, context.server)} | (${context.request.method}) ${context.request.url} - ${context.set.status}`);
   });
 

@@ -1,0 +1,76 @@
+the authoritative project (aka. 112x4 v3)
+=========================================>>
+
+a high-security, performance-oriented global ban manager and
+remote administration toolkit for script builders written in
+pure typescript and luau, supercharged by bun and powered by 
+elysia and discord.js
+
+-> for appeals, go to https://112x4.scriptlang.com/appeals
+-> the privacy policy is at https://112x4.scriptlang.com/privacy
+-> terms and conditions are at https://112x4.scriptlang.com/terms
+
+=================================================================
+
+latest changelogs (from latest to earliest)
+-------------------------------------------
+
+-> release 26.9
+   + enabled ahead-of-time compilation and precompilation of 
+     all backend routes for a significant performance boost of 
+     the API
+
+-> release 26.8
+   + added administrative commands for those who have the 5th
+     privilege level
+   / more bug fixes
+
+-> release 26.7
+   + added 4 moderator commands
+   + added watchdog for bans as a result of adding durations
+   / the /api/v2 endpoints are now deprecated, use /api/v3
+     instead
+
+-> release 26.6
+   / fixed 'lookup group' (problematic line in the embed 
+     creation)
+
+-> release 26.5
+   + added 3 lookup commands: lookup roblox, lookup discord, 
+     lookup group
+   / lookup group is still in the works because ~~discord.js 
+     is being gay~~ it is a fault on my end
+
+-> release 26.4
+   + host the authoritative project on a phone (joke)
+   + more commands for myself :trollface: (took a lot of time 
+     to add them because of the command handler)
+
+-> release 26.3
+   / changed presence of the bot
+
+-> release 26.2
+   + rewritten /ping in typescript (took 5 hours because of 
+     command handling)
+   - removed 99% of commands from the command tree
+   / added missing fields to v2 endpoints
+
+-> release 26.1
+   + deployed typescript bot and server
+   - removed all slash commands until they're reimplemented in
+     typescript
+   / 112x4 renamed to "the authoritative project"
+   / v3 endpoints are now mapped to `/api/v3`
+   / v1.5/v2 endpoints are now mapped to `/api/v2`
+   / v1.5 bans are now deprecated in favor of bans with durations
+
+================================================================
+
+some runtime information
+------------------------
+
+-> instance uptime in seconds: {UPTIME}
+-> ahead-of-time compilation for routes: {AOT}
+-> precompilation for routes: {PRECOMPILE}
+-> discord.js websocket latency: {WS_LATENCY}
+-> is bot ratelimited: {RATELIMITED}

@@ -1,0 +1,27 @@
+import { readdirSync, statSync } from "fs";
+import { join, relative, parse } from "path";
+import { Elysia } from "elysia";
+import { logger } from "../utilities/logging.ts";
+import { LogLevel } from "@sapphire/framework";
+
+export async function load_routes(app: Elysia, routes_dir: string) {
+  const walk_dir = async (dir: string, prefix = "") => {
+    const files = readdirSync(dir);
+    for (const file of files) {
+      const full_path = join(dir, file);
+      const file_stat = statSync(full_path);
+
+      if (file_stat.isDirectory()) {
+        walk_dir(full_path, prefix + "/" + file);
+      } else if (file_stat.isFile() && file.endsWith(".ts")) {
+        const route_module = await import(full_path);
+        if (typeof route_module.register_route === "function") {
+          logger.write(LogLevel.Info, `Registering route ${full_path}`);
+          route_module.register_route(app);
+        }
+      }
+    }
+  };
+
+  await walk_dir(routes_dir);
+}

@@ -1,0 +1,113 @@
+const env_variables = require("./env_variables.ts");
+const database = require("./database.ts");
+
+import { logger } from "./logging.ts";
+import { LogLevel } from "@sapphire/framework";
+
+export async function is_dc_user_id_owner(to_check: string): Promise<boolean> {
+  return (await env_variables.get_env_variable("OWNER") == to_check)
+}
+
+export async function is_dc_user_id_admin(to_check: string): Promise<boolean> {
+  let whitelist = await database.prisma.tAPWhitelist.findFirst({
+    where: {
+      discord_user_id: to_check
+    }
+  });
+
+  if (await env_variables.get_env_variable("OWNER") == to_check) return true;
+  if (!whitelist) return false;
+
+  return whitelist.privilege_level === 5
+}
+
+export async function is_rx_user_id_admin(to_check: string): Promise<boolean> {
+  let whitelist = await database.prisma.tAPWhitelist.findFirst({
+    where: {
+      rx_user_id: Number(to_check)
+    }
+  });
+
+  if (!whitelist) return false;
+
+  return whitelist.privilege_level === 5
+}
+
+export async function is_dc_user_id_capable_to_ban_users(to_check: string): Promise<boolean> {
+  let whitelist = await database.prisma.tAPWhitelist.findFirst({
+    where: {
+      discord_user_id: to_check
+    }
+  });
+
+  if (await env_variables.get_env_variable("OWNER") == to_check) return true;
+  if (!whitelist) return false;
+
+  return whitelist.privilege_level >= 3
+}
+
+export async function is_dc_user_id_capable_to_ban_groups(to_check: string): Promise<boolean> {
+  let whitelist = await database.prisma.tAPWhitelist.findFirst({
+    where: {
+      discord_user_id: to_check
+    }
+  });
+
+  if (await env_variables.get_env_variable("OWNER") == to_check) return true;
+  if (!whitelist) return false;
+
+  return whitelist.privilege_level >= 4
+}
+
+interface RobloxIPInfo {
+  as: string,
+  country_code: string,
+  isp: string,
+  org: string,
+}
+
+async function helper_obtain_ip_info(ip: string): Promise<any> {
+  const response = await fetch(`https://ipinfo.io/${ip}/json`);
+  return response.json() ?? "No IP info found";
+}
+
+export async function is_ip_from_roblox(ip: string): Promise<boolean> {
+  const ip_info = await helper_obtain_ip_info(ip);
+
+  const COUNTRY_CODES: Array<string> = ["AU", "GB", "JP", "US", "DE", "SG", "FR",
+                 "CA", "NL", "SE", "BR", "KR", "IE", "IN",
+                 "IT", "ES", "RU", "ZA"]
+
+  const asn: String = ip_info?.org ?? "No ASN found";
+  // const isp = ip_info?.isp ?? "No ISP found";
+  const country_code: String = ip_info?.country ?? "No country code found";
+  const org: String = ip_info?.org ?? "No org found";
+
+  // if (isp != "Roblox" || !("roblox" in isp.toLowerCase())) {
+  //   return false;
+  // }
+
+  if (org == "Roblox" || !(org.toLowerCase().includes("roblox"))) {
+    logger.write(LogLevel.Info, `IP is not from Roblox (organization mismatch): ${ip}`);
+    return false;
+  }
+
+  if (!(COUNTRY_CODES.find(code => code === country_code))) {
+    logger.write(LogLevel.Info, `IP is not from Roblox (country code mismatch): ${ip}`);
+    return false;
+  }
+
+  if (
+    asn != "AS22697 Roblox"
+    || asn != "AS11281 Roblox"
+    || !(asn.toLowerCase().includes("AS22697".toLowerCase()))
+    || !(asn.toLowerCase().includes("AS11281".toLowerCase()))
+    || !(asn.toLowerCase().includes("AS11281 Roblox".toLowerCase()))
+    || !(asn.toLowerCase().includes("AS136766".toLowerCase()))
+  ) {
+    logger.write(LogLevel.Info, `IP is not from Roblox (ASN mismatch): ${ip}`);
+    return false
+  }
+
+  return true
+}

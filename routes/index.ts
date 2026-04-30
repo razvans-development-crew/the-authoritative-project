@@ -31,14 +31,15 @@ export function register_route(app: Elysia) {
       plaintext_page_index = plaintext_page_index.replace("{WS_LATENCY}", bot_websocket_latency);
     }
 
-    if (plaintext_page_index.includes("{RATELIMITED}")) {
-      const ratelimit_data = await is_bot_ratelimited();
-      plaintext_page_index = plaintext_page_index.replace("{RATELIMITED}", ratelimit_data.is_ratelimited ? "true" : "false");
-      plaintext_page_index += "\n   -> retry after: " + ratelimit_data.retry_after;
-      plaintext_page_index += "\n   -> reset after: " + ratelimit_data.reset_after;
-      plaintext_page_index += "\n   -> rate limit remaining: " + ratelimit_data.rate_limit_remaining;
-      plaintext_page_index += "\n   -> rate limit scope: " + ratelimit_data.rate_limit_scope;
-    }
+    // keeping this branch would cause a ratelimit, therefore it has been commented out
+    // if (plaintext_page_index.includes("{RATELIMITED}")) {
+    //   const ratelimit_data = await is_bot_ratelimited();
+    //   plaintext_page_index = plaintext_page_index.replace("{RATELIMITED}", ratelimit_data.is_ratelimited ? "true" : "false");
+    //   plaintext_page_index += "\n   -> retry after: " + ratelimit_data.retry_after;
+    //   plaintext_page_index += "\n   -> reset after: " + ratelimit_data.reset_after;
+    //   plaintext_page_index += "\n   -> rate limit remaining: " + ratelimit_data.rate_limit_remaining;
+    //   plaintext_page_index += "\n   -> rate limit scope: " + ratelimit_data.rate_limit_scope;
+    // }
 
     return plaintext_page_index;
   })

@@ -1,5 +1,5 @@
 import { type Command } from "../../types/Command";
-import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, InteractionContextType } from "discord.js";
 import { registry } from "../../utilities/registry.ts";
 import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -29,6 +29,11 @@ export const command: Command = {
         .setName("invalid-signature")
         .setDescription("Checks the API key with an invalid signature.")
         .setRequired(false)
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.deferred) {

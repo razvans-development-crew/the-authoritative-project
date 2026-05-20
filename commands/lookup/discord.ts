@@ -1,6 +1,7 @@
 import {
   SlashCommandBuilder,
-  ChatInputCommandInteraction, EmbedBuilder
+  ChatInputCommandInteraction, EmbedBuilder,
+  InteractionContextType
 } from "discord.js";
 import { type Command } from "../../types/Command.ts";
 
@@ -21,6 +22,11 @@ const command: Command = {
         .setName('legacy-lookup')
         .setDescription('Whether to lookup the user in the legacy database')
         .setRequired(false)
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.deferred) {

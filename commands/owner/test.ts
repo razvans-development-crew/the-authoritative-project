@@ -1,10 +1,17 @@
-import { SlashCommandBuilder, CommandInteraction} from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, InteractionContextType} from "discord.js";
 import { type Command } from "../../types/Command.ts";
 
 const preconditions = require("../../utilities/preconditions.ts");
 
 const command: Command = {
-  data: new SlashCommandBuilder().setName('test').setDescription('Literally does nothing but send a message.'),
+  data: new SlashCommandBuilder()
+    .setName('test')
+    .setDescription('Literally does nothing but send a message.')
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
+    ),
   async execute(interaction: CommandInteraction) {
     if (await preconditions.is_dc_user_id_owner(interaction.user.id) === false) {
       await interaction.reply({ content: '> You are not the owner of this bot.' });

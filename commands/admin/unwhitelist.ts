@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction, InteractionContextType } from "discord.js";
 import { type Command } from "../../types/Command.ts";
 import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -17,6 +17,11 @@ const command: Command = {
         .setName('discord-user')
         .setDescription('The Discord user to unwhitelist.')
         .setRequired(true)
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.deferred) {

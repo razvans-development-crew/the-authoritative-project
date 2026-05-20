@@ -1,4 +1,4 @@
-import { REST, Routes } from "discord.js";
+import { InteractionContextType, REST, Routes } from "discord.js";
 import type { Command } from "../types/Command";
 import { logger } from "../utilities/logging";
 import { LogLevel } from "@sapphire/framework";
@@ -35,12 +35,18 @@ export async function register_commands(
   for (const [groupName, groupCommands] of grouped.entries()) {
     const parentCommand = new SlashCommandBuilder()
       .setName(groupName)
-      .setDescription(`commands for ${groupName}`);
+      .setDescription(`commands for ${groupName}`)
+      .setContexts(
+        InteractionContextType.BotDM,
+        InteractionContextType.PrivateChannel,
+        InteractionContextType.Guild
+      );
 
     for (const cmd of groupCommands) {
       logger.write(LogLevel.Info, `Registering command ${cmd.data.name}`);
       parentCommand.addSubcommand(sub => {
-        sub.setName(cmd.data.name).setDescription(cmd.data.description || "no description");
+        sub.setName(cmd.data.name)
+          .setDescription(cmd.data.description || "no description");
 
         for (const option of cmd.data.toJSON().options ?? []) {
           switch (option.type) {

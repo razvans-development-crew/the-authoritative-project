@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction, InteractionContextType} from "discord.js";
 import { type Command } from "../../types/Command.ts";
 
 const preconditions = require("../../utilities/preconditions.ts");
@@ -12,6 +12,11 @@ const command: Command = {
         .setName('expression')
         .setDescription('The expression to evaluate')
         .setRequired(true)
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (await preconditions.is_dc_user_id_owner(interaction.user.id) === false) {

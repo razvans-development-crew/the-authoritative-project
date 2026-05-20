@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction, InteractionContextType } from "discord.js";
 import { type Command } from "../../types/Command.ts";
 import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -34,6 +34,11 @@ const command: Command = {
         .setName('privilege-level')
         .setDescription("The user's privilege level. Defaults to 0.")
         .setRequired(false)
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.deferred) {

@@ -1,5 +1,5 @@
 import { type Command } from "../../types/Command";
-import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, InteractionContextType } from "discord.js";
 import { registry, type GeneratedKey } from "../../utilities/registry.ts";
 import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -22,6 +22,11 @@ export const command: Command = {
           { name: "AssetService:LoadAssetAsync", value: "2" },
           { name: "require", value: "3" },
         )
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.deferred) {

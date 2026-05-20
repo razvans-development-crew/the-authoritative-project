@@ -1,5 +1,5 @@
 import { type Command } from "../../types/Command";
-import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, InteractionContextType } from "discord.js";
 import { registry } from "../../utilities/registry.ts";
 import { logger } from "../../utilities/logging.ts";
 import { LogLevel } from "@sapphire/framework";
@@ -15,6 +15,11 @@ export const command: Command = {
       .setName("key")
       .setDescription("The authentication key.")
       .setRequired(true)
+    )
+    .setContexts(
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+      InteractionContextType.Guild
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.deferred) {

@@ -9,7 +9,7 @@ const preconditions = require("../../utilities/preconditions.ts");
 
 const command: Command = {
   data: new SlashCommandBuilder()
-    .setName('check-for-expired-group-bans')
+    .setName('check-for-exp-grp-bans')
     .setDescription('Checks for expired group bans and removes them from the database.')
     .setContexts(
       InteractionContextType.BotDM,

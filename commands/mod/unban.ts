@@ -49,8 +49,13 @@ const command: Command = {
         discord_user_id: interaction.user.id
       }
     });
+    const target_ban_data = await database.prisma.tAPGlobalUserBan.findFirst({
+      where: {
+        rx_user_name: username
+      }
+    });
 
-    if (!target_whitelist_data) {
+    if (!target_ban_data) {
       await interaction.followUp({ content: '> The specified user is not banned.' });
       return;
     }

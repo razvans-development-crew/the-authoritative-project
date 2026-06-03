@@ -138,7 +138,7 @@ const command: Command = {
           + "\n**Reason**: "
           + String(user_ban_info.reason)
           + "\n**Until**: "
-          + user_ban_info.duration,
+          + String(user_ban_info.duration),
         inline: false
       })
     }

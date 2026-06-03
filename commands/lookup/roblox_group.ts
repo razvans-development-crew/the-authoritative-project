@@ -93,7 +93,7 @@ const command: Command = {
           + "\n**Reason**: "
           + String(group_ban_info.reason)
           + "\n**Until**: "
-          + group_ban_info.duration,
+          + String(group_ban_info.duration),
         inline: false
       })
     }

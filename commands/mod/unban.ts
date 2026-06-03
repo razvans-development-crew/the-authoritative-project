@@ -34,16 +34,6 @@ const command: Command = {
 
     const username = interaction.options.getString('roblox-user');
     const user_id = await rozod_client.get_user_id_from_name(username);
-    const target_whitelist_data = await database.prisma.tAPWhitelist.findFirst({
-      where: {
-        rx_user_id: user_id
-      }
-    });
-    const moderator_whitelist_data = await database.prisma.tAPWhitelist.findFirst({
-      where: {
-        rx_user_id: interaction.user.id
-      }
-    });
     const admin_whitelist_data = await database.prisma.tAPWhitelist.findFirst({
       where: {
         discord_user_id: interaction.user.id
@@ -60,8 +50,15 @@ const command: Command = {
       return;
     }
 
+    const moderator_whitelist_data = await database.prisma.tAPWhitelist.findFirst({
+      where: {
+        discord_user_id: target_ban_data.moderator_dc_id
+      }
+    });
+
     if (admin_whitelist_data.privilege_level < moderator_whitelist_data.privilege_level) {
       await interaction.followUp({ content: '> You cannot unban someone who was banned by someone with a privilege level higher than your own.' });
+      return
     }
 
     try {

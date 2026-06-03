@@ -125,7 +125,7 @@ const command: Command = {
           + "\n**Moderator**: "
           + user_ban_info.moderator
           + "\n**Reason**: "
-          + user_ban_info.reason,
+          + String(user_ban_info.reason),
         inline: false
       })
     } else if (interaction.options.getBoolean('legacy-lookup') === false && user_ban_info != "No info found") {
@@ -136,7 +136,7 @@ const command: Command = {
           + "\n**Moderator**: "
           + user_ban_info.moderator_dc_id
           + "\n**Reason**: "
-          + user_ban_info.reason
+          + String(user_ban_info.reason)
           + "\n**Until**: "
           + user_ban_info.duration,
         inline: false

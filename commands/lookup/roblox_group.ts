@@ -80,7 +80,7 @@ const command: Command = {
           + "\n**Moderator**: `"
           + group_ban_info.moderator
           + "`\n**Reason**: "
-          + group_ban_info.reason,
+          + String(group_ban_info.reason),
         inline: false
       })
     } else if (interaction.options.getBoolean('legacy-lookup') === false && group_ban_info != "No info found") {
@@ -91,7 +91,7 @@ const command: Command = {
           + "\n**Moderator**: "
           + group_ban_info.moderator_dc_id
           + "\n**Reason**: "
-          + group_ban_info.reason
+          + String(group_ban_info.reason)
           + "\n**Until**: "
           + group_ban_info.duration,
         inline: false
